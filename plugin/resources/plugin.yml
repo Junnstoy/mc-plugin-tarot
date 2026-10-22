@@ -1,5 +1,5 @@
 name: TarotRainbow
-version: 3.2.0
+version: 3.3.0
 main: cn.tarot.TarotPlugin
 api-version: '26.3'
 description: Rainbow tarot cards, timed equipment effects, and collectible packs

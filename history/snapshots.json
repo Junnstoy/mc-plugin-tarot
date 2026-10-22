@@ -2339,5 +2339,46 @@
         }
       }
     ]
+  },
+  {
+    "tag": "v3.3.0",
+    "description": "头顶光环、挂机翅膀与五秒技能蓄力",
+    "sources": [
+      {
+        "archive": "TarotRainbow-3.3.0-source.zip",
+        "archive_sha256": "81796b28b48e48b8826ff18069453f1e583180a29d123eab37ba77d7741bb968",
+        "target": "plugin",
+        "files": {
+          "src/cn/tarot/AlbumAura.java": "3f2a829137044e8a7d5c3bc1f0cdfad684d5dd944d2a56e4d0f6fa0d67c05012",
+          "src/cn/tarot/AlbumAuraTest.java": "5309f41a99e4ea1013f428cc411d02e7ac41fe84ed056b64c9b312bd803b49af",
+          "src/cn/tarot/AlbumMenu.java": "6d0589cf1b6b78c28d4726dad019a729537da69c8f45bd87d32cb01e20e97caa",
+          "src/cn/tarot/AlbumMenuTest.java": "50fc955b25528b967f982eb9396c6609193cc031e9645f6e84e2f7a7ea85aa8f",
+          "src/cn/tarot/AlbumRules.java": "d54e451cf12ef1de253891e3155b9b1441074529fcaab7be0c964f276d95ebdb",
+          "src/cn/tarot/AlbumRulesTest.java": "67e43a5fc5c2c6074cb2a8ee447b86df97aa18b76917b0d0ea2a730428bbb0cb",
+          "src/cn/tarot/AlbumService.java": "1ce2daa18432fc2daa2dc79469e2fa3dd66653213759af8a1996e3c0beb2a86b",
+          "src/cn/tarot/AlbumServiceTest.java": "8e27f60946e5168f57263c432e2213e3b373d8cf390b85de1e00bd7465496f26",
+          "src/cn/tarot/AlbumStore.java": "025708f96c8cb2f4b47556656ebcc36e3da579902e58fec09259a85838fd4675",
+          "src/cn/tarot/CardParticleArt.java": "98269928e0cf6d7b618615acf84c931f85808b9e8b4c8d8ec53dc1211fbe1674",
+          "src/cn/tarot/ChargeController.java": "100bcd6e1a51cc34be1329fed2605cff7fb2f4dd297f1ef9e9434c785eb31167",
+          "src/cn/tarot/ChargeControllerTest.java": "342cef50ff1b245a0220c5f75fb4e5a0aecbeb95e1ad21c2e3b2020ce1c4402a",
+          "src/cn/tarot/CommandEventTest.java": "ca2a73c208efca68d894f437d60aefbf455b85203bbc881992351121d5a1c4bd",
+          "src/cn/tarot/Core.java": "277be9eb5bf12962afd968210800892bfc00f027298fc5b32db2940f0607f9e0",
+          "src/cn/tarot/CoreTest.java": "f7ecbadb187dff1e994bbbb45ff05bb74f20f706edcab9f4af4508ddbb8b0769",
+          "src/cn/tarot/InventoryPlan.java": "ba77de88a25ad2097e1a0395ffcfd6c806ac523fcc5532c7fe1fa3ac787d8d1e",
+          "src/cn/tarot/ParticleLines.java": "736a6b961fb7a15f750963231719a0f703404fa9a626b4e5a49af3cc4c00ad23",
+          "src/cn/tarot/ParticleVisualTest.java": "7e4fb6bbab733ce893d55f56026b049736b28ae738f98b90f0b8158ba8a513fd",
+          "src/cn/tarot/TarotCast.java": "8f8c14b82b6b4db65250a95bf8912fdad8f04fade1ea04ea39e84bd72a44535e",
+          "src/cn/tarot/TarotCastTest.java": "d04ffe165de71e979503d2796276dd4a176949dc9f9f04fd7fb3d13bd8735c96",
+          "src/cn/tarot/TarotCommand.java": "4f350ddbf6ef25869e7e4a21dd990c82fd8126875edb4956187c4c02555d64f8",
+          "src/cn/tarot/TarotCommandTest.java": "271562148e4850fb168c1dff45a57a751352010c0f859489fc526b1553423a4e",
+          "src/cn/tarot/TarotPlugin.java": "8ab175cd68277a1a787eec148b5b8631d0302e9a07c0312b2f77ae0f948ae77d",
+          "src/cn/tarot/UpgradeEventTest.java": "f9a703fa3eb9f15a6c63cc98543377ac72b6cb73447ff2646259a4cb58a26b6a",
+          "resources/card-particles.csv": "9f86e837f304c89da25da39364421b4b7f5880a0d1a209e7a82a2bd6db6c6a69",
+          "resources/config.yml": "735e1b43f09c5668c03f4af868cb7417f7a3c83009fbf1a62384236f12633ff2",
+          "resources/plugin.yml": "183ed6cf1b1452a94401926fbaeb7428249c7822af25f2fbfa2d7e38f99bf749",
+          "build.ps1": "c4ab1a18ac86ba53b77195b7c555c6b70eebf4389d2705a669b8e1c2827fde12"
+        }
+      }
+    ]
   }
 ]

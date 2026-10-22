@@ -73,6 +73,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     private File stateFile;
     private int seconds;
     private AlbumService albums;
+    private ChargeController charging;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -85,10 +86,12 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         Objects.requireNonNull(getCommand("tarot")).setExecutor(this);getCommand("tarot").setTabCompleter(this);
         for(Player p:Bukkit.getOnlinePlayers()) restore(p);
         albums=new AlbumService(this);albums.start();
+        charging=new ChargeController(this,s->cardId(s)>0,this::canCharge,this::renderCast,this::activateCard);charging.start();
         Bukkit.getScheduler().runTaskTimer(this,this::tick,20,20);
         getLogger().info("22 cards x 5 levels ready; real-time duration="+durationMillis/1000+"s, switch lock="+lockMillis/1000+"s. Remove legacy tarot datapacks before use.");
     }
     @Override public void onDisable() {
+        if(charging!=null)charging.shutdown();
         if(albums!=null)albums.shutdown();
         saveState();
         for(Player p:Bukkit.getOnlinePlayers()) { removeAttributes(p);clampHealth(p);removeIcon(p); }
@@ -127,12 +130,13 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         m.itemName(text(RARITIES[c.rarity]+" · "+c.name+" "+"★".repeat(level),RARITY_COLORS[c.rarity]));
         List<Component> lore=new ArrayList<>();
         for(Bonus b:c.bonuses) lore.add(text(b.label+" +"+number(b.amount*SCALE[level-1]*(b.multiply?100:1))+(b.multiply?"%（基础值）":""),0x8fffb2));
-        lore.add(text("副手持牌 · 潜行 + 右键激活",0x80ddff));
+        lore.add(text("副手持牌 · 长按右键 5 秒激活",0x80ddff));
+        lore.add(text("松手或换牌取消蓄力；成功后开始效果及冷却计时",0xa9a9bd));
         lore.add(text("持续 "+time(durationMillis)+" · 换牌锁定 "+time(lockMillis),0xffdc70));
         lore.add(text("现实时间计时，离线仍计时；移出副手仍生效",0xa9a9bd));
         lore.add(text(level<5?"生存／冒险背包：同名同星卡重叠升级":"已达到最高五星",0xe7bbff));
         if(Arrays.stream(c.bonuses).anyMatch(b->b.attribute==Attribute.LUCK))lore.add(text("幸运不会增加本卡包的稀有牌概率",0xaaaaaa));
-        m.lore(lore);s.setItemMeta(m);return s;
+        m.lore(lore);s.setItemMeta(m);ChargeController.configureCard(s);return s;
     }
     public ItemStack makePackage(String kind,int amount) {
         ItemStack s=new ItemStack(Material.PAPER,amount);ItemMeta m=s.getItemMeta();m.setMaxStackSize(64);
@@ -172,32 +176,57 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         }
         p.playSound(p.getLocation(),Sound.ITEM_BUNDLE_DROP_CONTENTS,.7f,1);
     }
-    private boolean handle(Player p) {
+    private boolean handlePackage(Player p) {
         if(!p.isSneaking()||p.getGameMode()==GameMode.SPECTATOR)return false;
         migrate(p);
-        ItemStack off=p.getInventory().getItemInOffHand();if(!tarot(off))return false;
+        ItemStack off=p.getInventory().getItemInOffHand();String pack=packageType(off);if(pack.isEmpty())return false;
         long now=System.currentTimeMillis();Long previous=gestures.put(p.getUniqueId(),now);
         if(previous!=null&&now-previous<250)return true;
-        String pack=packageType(off);if(!pack.isEmpty()){open(p,pack);return true;}
-        long cooldown=cooldownRemaining(p.getUniqueId(),now);
-        if(cooldown>0){message(p,"换牌仍锁定，"+time(cooldown)+" 后可切换或重新激活。");return true;}
+        open(p,pack);return true;
+    }
+    boolean isCharging(Player p){return charging!=null&&charging.isCharging(p);}
+    private boolean canCharge(Player p){
+        if(p.getGameMode()==GameMode.SPECTATOR)return false;
+        long cooldown=cooldownRemaining(p.getUniqueId(),System.currentTimeMillis());
+        if(cooldown>0){message(p,"换牌仍锁定，"+time(cooldown)+" 后可切换或重新激活。");return false;}
+        return true;
+    }
+    private void renderCast(Player p,double progress){
+        ItemStack off=p.getInventory().getItemInOffHand();int id=cardId(off);if(id==0)return;
+        int level=cardLevel(off);
+        if(!p.isInvisible())ParticleLines.draw(p,TarotCast.frame(level,progress,CardParticleArt.get(id)),false);
+        p.sendActionBar(text("「"+card(id).name+"」蓄力 "+String.format(Locale.ROOT,"%.1f / 5.0 秒",progress*5)+" · 松手取消",0xc9a1ff));
+    }
+    private void activateCard(Player p){
+        ItemStack off=p.getInventory().getItemInOffHand();if(cardId(off)==0)return;
+        long now=System.currentTimeMillis();
         int id=cardId(off),level=value(off,levelKey);
         Core.Active state=new Core.Active(id,level,now,now+durationMillis,now+lockMillis);
         active.put(p.getUniqueId(),state);
         cooldowns.put(p.getUniqueId(),Math.min(state.expires(),state.unlocks()));
-        apply(p,state);updateIcon(p,state);saveState();burst(p,level);
+        apply(p,state);updateIcon(p,state);saveState();renderCast(p,1);
+        p.sendActionBar(text("「"+card(id).name+"」已激活",0x8fffb2));
         p.playSound(p.getLocation(),Sound.BLOCK_ENCHANTMENT_TABLE_USE,.8f,.8f+level*.12f);
-        message(p,"已激活「"+card(id).name+"」"+"★".repeat(level)+"，持续 "+time(durationMillis)+"；"+time(lockMillis)+" 后可换牌。");return true;
+        message(p,"已激活「"+card(id).name+"」"+"★".repeat(level)+"，持续 "+time(durationMillis)+"；"+time(lockMillis)+" 后可换牌。");
     }
     @EventHandler(priority=EventPriority.HIGH) public void interact(PlayerInteractEvent e) {
         if(e.getAction()!=Action.RIGHT_CLICK_AIR&&e.getAction()!=Action.RIGHT_CLICK_BLOCK)return;
+        Player p=e.getPlayer();
+        if(e.getHand()==EquipmentSlot.OFF_HAND&&cardId(p.getInventory().getItemInOffHand())>0){
+            if(e.useItemInHand()==Event.Result.DENY)return;
+            migrate(p);
+            e.setUseInteractedBlock(Event.Result.DENY);
+            e.setUseItemInHand(charging.request(p)?Event.Result.ALLOW:Event.Result.DENY);
+            return;
+        }
+        // A tarot card in the main hand must not consume or suppress a usable offhand card.
+        if(e.getHand()==EquipmentSlot.HAND&&cardId(p.getInventory().getItemInMainHand())>0){e.setUseItemInHand(Event.Result.DENY);return;}
         if(albums!=null&&albums.use(e.getPlayer())){e.setUseInteractedBlock(Event.Result.DENY);e.setUseItemInHand(Event.Result.DENY);e.setCancelled(true);return;}
-        // Paper may deliver the usable offhand gesture without a mainhand event.
-        if(handle(e.getPlayer())){e.setUseInteractedBlock(Event.Result.DENY);e.setUseItemInHand(Event.Result.DENY);e.setCancelled(true);}
+        if(handlePackage(e.getPlayer())){e.setUseInteractedBlock(Event.Result.DENY);e.setUseItemInHand(Event.Result.DENY);e.setCancelled(true);}
     }
     @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void entityInteract(PlayerInteractEntityEvent e) {
         if(albums!=null&&albums.use(e.getPlayer())){e.setCancelled(true);return;}
-        if(handle(e.getPlayer()))e.setCancelled(true);
+        if(handlePackage(e.getPlayer()))e.setCancelled(true);
     }
     @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void merge(InventoryClickEvent e) {
         if(!(e.getWhoClicked() instanceof Player p)||e.getClickedInventory()!=p.getInventory())return;
@@ -237,9 +266,12 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         if(tarot(item)){
             int id=cardId(item);String model=id>0?"card_"+id+"_"+value(item,levelKey):packageType(item);
             ItemMeta meta=item.getItemMeta();
-            if(vanillaPaperModel(meta)&&
+            if((id==0||ChargeController.isConfigured(item))&&vanillaPaperModel(meta)&&
                     meta.getCustomModelDataComponent().getStrings().equals(List.of("tarot:"+model)))return item;
-            ItemStack updated=item.clone();appearance(meta,model);updated.setItemMeta(meta);return updated;
+            ItemStack updated=item.clone();appearance(meta,model);
+            if(id>0&&meta.hasLore())meta.lore(meta.lore().stream().map(line->line.replaceText(
+                net.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral("副手持牌 · 潜行 + 右键激活").replacement("副手持牌 · 长按右键 5 秒激活").build())).toList());
+            updated.setItemMeta(meta);if(id>0)ChargeController.configureCard(updated);return updated;
         }
         try {
             var root=Bukkit.getUnsafe().serializeItemAsJson(item);
@@ -322,7 +354,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
             }
             if(p==null||p.isDead())continue;
             updateIcon(p,s);
-            if(barEnabled&&(tarot(p.getInventory().getItemInOffHand())||p.hasPotionEffect(PotionEffectType.LUCK)))
+            if(barEnabled&&!isCharging(p)&&(tarot(p.getInventory().getItemInOffHand())||p.hasPotionEffect(PotionEffectType.LUCK)))
                 p.sendActionBar(text(card(s.card()).name+" "+"★".repeat(s.level())+" | 剩余 "+time(s.remaining(now))+" | "+(cooldownRemaining(entry.getKey(),now)>0?"换牌 "+time(cooldownRemaining(entry.getKey(),now)):"可以换牌"),RARITY_COLORS[card(s.card()).rarity]));
         }
         if(changed||seconds%60==0)saveState();
@@ -437,7 +469,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     private void status(Player p){
         long now=System.currentTimeMillis(),remaining=cooldownRemaining(p.getUniqueId(),now);Core.Active s=active.get(p.getUniqueId());
         if(s==null||s.expired(now)){
-            message(p,"当前没有激活的塔罗牌。"+(remaining>0?"换牌冷却剩余 "+time(remaining):"副手持牌，潜行 + 右键激活。"));return;
+            message(p,"当前没有激活的塔罗牌。"+(remaining>0?"换牌冷却剩余 "+time(remaining):"副手持牌，长按右键 5 秒激活。"));return;
         }
         message(p,card(s.card()).name+" "+"★".repeat(s.level())+" | 剩余 "+time(s.remaining(now))+" | "+(remaining>0?"换牌锁定 "+time(remaining):"可以更换"));
         for(Bonus b:card(s.card()).bonuses)message(p,b.label+" +"+number(b.amount*SCALE[s.level()-1]*(b.multiply?100:1))+(b.multiply?"%（基础值）":""));
@@ -447,7 +479,8 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         sender.sendMessage("/tarot help — 显示帮助；/tarot status — 查看卡牌效果与换牌冷却");
         sender.sendMessage("/tarot album — 直接打开个人收藏，不发放物品；携带实体册子才有收藏加成");
         sender.sendMessage("/tarot collection — 查看进度与奖励；/tarot aura — 开关跟随粒子");
-        sender.sendMessage("/tarot migrate — 更新随身旧版物品；副手持牌 + 潜行右键激活");
+        sender.sendMessage("/tarot migrate — 更新随身旧版物品；副手持牌长按右键 5 秒，松手取消蓄力");
+        sender.sendMessage("卡包／盒／箱仍使用副手持有 + 潜行右键拆开");
         sender.sendMessage("生存／冒险背包：将同名同星的两张 1–4 星卡重叠升级；卡册内 Shift 点击背包卡牌存入，左键取回");
         if(!sender.hasPermission("tarot.admin"))return;
         sender.sendMessage("/tarot give <玩家> card <1–22|中文牌名|all> <1–5星> <1–64数量>");
@@ -503,6 +536,8 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         AlbumServiceTest.run(this);
         AlbumMenuTest.run(this);
         CommandEventTest.run(this);
+        ChargeControllerTest.run(this);
+        ParticleVisualTest.run(this);
         getLogger().info("TAROT SELFTEST PASS: full/four/five free slots; stack16+48 and17+48; no mutation on reject;110 cards; legacy and V3.0.0 migration; vanilla paper fallback.");
     }
 }

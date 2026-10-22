@@ -25,6 +25,7 @@ final class AlbumService implements Listener {
     private final Set<UUID> failed=new HashSet<>();
     private final Map<UUID,List<AlbumRules.Bonus>> applied=new HashMap<>();
     private final Map<UUID,Long> gestures=new HashMap<>();
+    private final Map<UUID,AuraSession> auras=new HashMap<>();
     private final AlbumMenu menu;
     private int frame;
     AlbumService(TarotPlugin plugin){
@@ -41,12 +42,12 @@ final class AlbumService implements Listener {
         for(Player p:Bukkit.getOnlinePlayers())restore(p);
         Bukkit.getScheduler().runTaskTimer(plugin,()->{
             frame++;for(Player p:Bukkit.getOnlinePlayers()){
-                if(frame%2==0)refresh(p);
+                if(frame%10==0)refresh(p);
                 aura(p);
             }
-        },10,10);
+        },2,2);
     }
-    void shutdown(){menu.closeAll();for(Player p:Bukkit.getOnlinePlayers()){remove(p);clamp(p);}profiles.clear();}
+    void shutdown(){menu.closeAll();for(Player p:Bukkit.getOnlinePlayers()){remove(p);clamp(p);}profiles.clear();auras.clear();}
     static Component text(String s,int color){return Component.text(s,TextColor.color(color)).decoration(TextDecoration.ITALIC,false);}
     private void tell(Player p,String text){p.sendMessage(text("[收集册] "+text,0xffdc70));}
     ItemStack makeAlbum(){
@@ -239,25 +240,36 @@ final class AlbumService implements Listener {
         applied.remove(p.getUniqueId());
     }
     private static void clamp(Player p){AttributeInstance a=p.getAttribute(Attribute.MAX_HEALTH);if(!p.isDead()&&a!=null&&p.getHealth()>a.getValue())p.setHealth(a.getValue());}
-    private void aura(Player p){
-        if(p.isDead()||p.getGameMode()==GameMode.SPECTATOR||p.isInvisible()||!hasAlbum(p)||!particlesEnabled(p))return;
-        int tier=AlbumRules.auraTier(progress(p));if(tier==0)return;
-        Location origin=p.getLocation();int points=tier==6?20:6+tier*2;
-        for(int i=0;i<points;i++){
-            double angle=2*Math.PI*i/points+frame*.18;
-            double height=tier==6?.2+(i%10)*.18:.12+(tier-1)*.13;
-            Location at=origin.clone().add(Math.cos(angle)*.65,height,Math.sin(angle)*.65);
-            int color=TarotPlugin.RAINBOW[tier==6?(i+frame)%7:Math.min(6,tier-1)];
-            var dust=new Particle.DustOptions(Color.fromRGB(color),.7f);
-            for(Player viewer:p.getWorld().getPlayers())if(viewer.canSee(p)&&viewer.getLocation().distanceSquared(origin)<=32*32)
-                viewer.spawnParticle(Particle.DUST,at,1,0,0,0,0,dust);
+    void aura(Player p){
+        UUID id=p.getUniqueId();
+        if(p.isDead()||p.getGameMode()==GameMode.SPECTATOR||p.isInvisible()||!hasAlbum(p)||!particlesEnabled(p)||plugin.isCharging(p)){
+            auras.remove(id);return;
         }
+        int tier=AlbumRules.auraTier(progress(p));if(tier==0){auras.remove(id);return;}
+        Location origin=p.getLocation();AuraSession session=auras.get(id);
+        if(session==null||session.animation.tier()!=tier||!session.last.getWorld().equals(origin.getWorld())){
+            session=new AuraSession(tier,origin);auras.put(id,session);
+        }
+        boolean moved=session.moved||displaced(session.last,origin);
+        session.last=origin.clone();session.moved=false;
+        ParticleLines.draw(p,session.animation.step(2,moved).points(),true);
+    }
+    private static boolean displaced(Location a,Location b){
+        return !Objects.equals(a.getWorld(),b.getWorld())||a.distanceSquared(b)>1e-8;
+    }
+    private static final class AuraSession{
+        final AlbumAura.State animation;Location last;boolean moved;
+        AuraSession(int tier,Location location){animation=new AlbumAura.State(tier);last=location.clone();}
+    }
+    @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void move(PlayerMoveEvent e){
+        AuraSession session=auras.get(e.getPlayer().getUniqueId());
+        if(session!=null&&e.getTo()!=null&&displaced(e.getFrom(),e.getTo()))session.moved=true;
     }
     private void later(Player p){if(plugin.isEnabled())Bukkit.getScheduler().runTask(plugin,()->{if(p.isOnline())refresh(p);});}
     private void restore(Player p){remove(p);refresh(p);}
     @EventHandler public void join(PlayerJoinEvent e){Bukkit.getScheduler().runTaskLater(plugin,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},12);}
     @EventHandler public void respawn(PlayerRespawnEvent e){Bukkit.getScheduler().runTaskLater(plugin,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},3);}
-    @EventHandler public void quit(PlayerQuitEvent e){Player p=e.getPlayer();remove(p);clamp(p);profiles.remove(p.getUniqueId());failed.remove(p.getUniqueId());gestures.remove(p.getUniqueId());}
+    @EventHandler public void quit(PlayerQuitEvent e){Player p=e.getPlayer();remove(p);clamp(p);profiles.remove(p.getUniqueId());failed.remove(p.getUniqueId());gestures.remove(p.getUniqueId());auras.remove(p.getUniqueId());}
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void drop(PlayerDropItemEvent e){later(e.getPlayer());}
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true) public void pickup(EntityPickupItemEvent e){
         if(!(e.getEntity() instanceof Player p))return;

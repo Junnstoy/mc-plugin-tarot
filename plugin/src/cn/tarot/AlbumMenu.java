@@ -154,6 +154,9 @@ public final class AlbumMenu implements Listener {
             List.of("左键切换显示，不影响属性奖励", "已集齐星级：" + (completed.isEmpty() ? "暂无" : completed.stream()
                 .map(star -> "★".repeat(star)).collect(Collectors.joining(" / "))),
                 "当前特效：" + (tier == 6 ? "110 种全收集 · 最终彩虹" : tier == 0 ? "尚未解锁" : "第 " + tier + " 档"),
+                "头顶 75% 圆弧；每圈结束停 1 秒",
+                "连续静止 7 圈展开挂机形态；移动恢复转圈",
+                "五星七色轮换／彩虹羽翼，全收集额外冠环",
                 "需随身携带收集册；取回卡牌后即时重算")));
         inventory.setItem(53, icon(Material.BARRIER, "关闭收集册", TEXT,
             List.of("Shift + 左键背包卡牌：存入", "左键册中卡牌：取回", "/tarot album 随时打开，不额外领取物品",
