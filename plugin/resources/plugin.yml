@@ -1,0 +1,13 @@
+name: TarotRainbow
+version: 3.0.0
+main: cn.tarot.TarotPlugin
+api-version: '26.3'
+description: Rainbow tarot cards, timed equipment effects, and collectible packs
+author: Yuma
+commands:
+  tarot:
+    description: Tarot cards and status
+    usage: /tarot status | give <player> <pack|box|case> [count] | card <player> <id> <level> | clear <player>
+permissions:
+  tarot.admin:
+    default: op

@@ -1,0 +1,20 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "tarot:item/card_12_5",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -27078
+      },
+      {
+        "type": "minecraft:constant",
+        "value": -4031745
+      },
+      {
+        "type": "minecraft:constant",
+        "value": -15264979
+      }
+    ]
+  }
+}

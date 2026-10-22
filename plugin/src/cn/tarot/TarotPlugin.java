@@ -1,0 +1,387 @@
+package cn.tarot;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.*;
+import org.bukkit.attribute.*;
+import org.bukkit.command.*;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.*;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityPotionEffectEvent;
+import org.bukkit.event.inventory.*;
+import org.bukkit.event.player.*;
+import org.bukkit.inventory.*;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.*;
+import org.bukkit.scheduler.BukkitRunnable;
+
+public final class TarotPlugin extends JavaPlugin implements Listener, CommandExecutor, TabCompleter {
+    record Bonus(Attribute attribute, String label, double amount, boolean multiply) {}
+    record Card(int id, String name, int rarity, Bonus[] bonuses) {}
+    static Bonus add(Attribute a,String n,double amount) { return new Bonus(a,n,amount,false); }
+    static Bonus mult(Attribute a,String n,double amount) { return new Bonus(a,n,amount,true); }
+    static final String[] RARITIES={"R","SR","SSR","SP","UR"};
+    static final int[] RARITY_COLORS={0xff5252,0xff983e,0xffdc40,0x4bdf7f,0xb478ff};
+    static final int[] RAINBOW={0xff5252,0xff983e,0xffdc40,0x4bdf7f,0x46e1e8,0x568bff,0xb478ff};
+    static final double[] SCALE={1,1.2,1.45,1.75,2.1};
+    static final Card[] CARDS={
+        new Card(1,"愚者",0,new Bonus[]{mult(Attribute.MOVEMENT_SPEED,"移动速度",.10),add(Attribute.JUMP_STRENGTH,"跳跃力度",.10)}),
+        new Card(2,"魔术师",1,new Bonus[]{mult(Attribute.ATTACK_SPEED,"攻击速度",.15),add(Attribute.ATTACK_DAMAGE,"攻击伤害",1)}),
+        new Card(3,"女祭司",1,new Bonus[]{add(Attribute.MAX_HEALTH,"生命上限（点）",4),add(Attribute.LUCK,"幸运",1)}),
+        new Card(4,"女皇",2,new Bonus[]{add(Attribute.MAX_HEALTH,"生命上限（点）",6),add(Attribute.ARMOR,"护甲",2)}),
+        new Card(5,"皇帝",2,new Bonus[]{add(Attribute.ARMOR,"护甲",5),add(Attribute.KNOCKBACK_RESISTANCE,"击退抗性",.10)}),
+        new Card(6,"教皇",1,new Bonus[]{add(Attribute.ARMOR,"护甲",2),add(Attribute.MAX_HEALTH,"生命上限（点）",2)}),
+        new Card(7,"恋人",0,new Bonus[]{add(Attribute.MAX_HEALTH,"生命上限（点）",2),mult(Attribute.MOVEMENT_SPEED,"移动速度",.05)}),
+        new Card(8,"战车",1,new Bonus[]{mult(Attribute.MOVEMENT_SPEED,"移动速度",.20),add(Attribute.STEP_HEIGHT,"跨步高度（格）",.5)}),
+        new Card(9,"力量",2,new Bonus[]{add(Attribute.ATTACK_DAMAGE,"攻击伤害",3),add(Attribute.ATTACK_KNOCKBACK,"攻击击退",.3)}),
+        new Card(10,"隐者",0,new Bonus[]{add(Attribute.SNEAKING_SPEED,"潜行速度",.15),mult(Attribute.MOVEMENT_SPEED,"移动速度",.05)}),
+        new Card(11,"命运之轮",3,new Bonus[]{add(Attribute.LUCK,"幸运",4),mult(Attribute.ATTACK_SPEED,"攻击速度",.20)}),
+        new Card(12,"正义",1,new Bonus[]{add(Attribute.ATTACK_DAMAGE,"攻击伤害",1),add(Attribute.ARMOR,"护甲",2)}),
+        new Card(13,"倒吊人",0,new Bonus[]{add(Attribute.SAFE_FALL_DISTANCE,"安全跌落距离（格）",4),add(Attribute.JUMP_STRENGTH,"跳跃力度",.15)}),
+        new Card(14,"死神",3,new Bonus[]{add(Attribute.ATTACK_DAMAGE,"攻击伤害",5),mult(Attribute.MOVEMENT_SPEED,"移动速度",.10)}),
+        new Card(15,"节制",0,new Bonus[]{mult(Attribute.ATTACK_SPEED,"攻击速度",.10),add(Attribute.ARMOR,"护甲",1)}),
+        new Card(16,"恶魔",2,new Bonus[]{add(Attribute.ATTACK_DAMAGE,"攻击伤害",4),mult(Attribute.ATTACK_SPEED,"攻击速度",.10)}),
+        new Card(17,"高塔",3,new Bonus[]{add(Attribute.ARMOR,"护甲",6),add(Attribute.ATTACK_KNOCKBACK,"攻击击退",.8)}),
+        new Card(18,"星星",0,new Bonus[]{add(Attribute.LUCK,"幸运",2),add(Attribute.SAFE_FALL_DISTANCE,"安全跌落距离（格）",3)}),
+        new Card(19,"月亮",1,new Bonus[]{add(Attribute.SNEAKING_SPEED,"潜行速度",.25),add(Attribute.ATTACK_DAMAGE,"攻击伤害",1)}),
+        new Card(20,"太阳",2,new Bonus[]{add(Attribute.MAX_HEALTH,"生命上限（点）",8),add(Attribute.ARMOR,"护甲",2)}),
+        new Card(21,"审判",4,new Bonus[]{add(Attribute.ATTACK_DAMAGE,"攻击伤害",5),add(Attribute.ARMOR,"护甲",6)}),
+        new Card(22,"世界",4,new Bonus[]{add(Attribute.ATTACK_DAMAGE,"攻击伤害",3),add(Attribute.ARMOR,"护甲",4),mult(Attribute.MOVEMENT_SPEED,"移动速度",.20),add(Attribute.MAX_HEALTH,"生命上限（点）",6)})
+    };
+    private final Map<UUID,Core.Active> active=new HashMap<>();
+    private final Map<UUID,Long> gestures=new HashMap<>();
+    private final Set<UUID> fakeIcon=new HashSet<>();
+    private NamespacedKey cardKey,levelKey,packageKey;
+    private long durationMillis,lockMillis;
+    private boolean iconEnabled,barEnabled;
+    private File stateFile;
+    private int seconds;
+
+    @Override public void onEnable() {
+        saveDefaultConfig();
+        durationMillis=Math.max(1,Math.min(31536000,getConfig().getLong("duration-seconds",86400)))*1000L;
+        lockMillis=Math.max(0,Math.min(31536000,getConfig().getLong("switch-lock-seconds",1800)))*1000L;
+        iconEnabled=getConfig().getBoolean("status-icon",true); barEnabled=getConfig().getBoolean("actionbar",true);
+        cardKey=new NamespacedKey(this,"card");levelKey=new NamespacedKey(this,"level");packageKey=new NamespacedKey(this,"package");
+        stateFile=new File(getDataFolder(),"players.yml");loadState();
+        getServer().getPluginManager().registerEvents(this,this);
+        Objects.requireNonNull(getCommand("tarot")).setExecutor(this);getCommand("tarot").setTabCompleter(this);
+        for(Player p:Bukkit.getOnlinePlayers()) restore(p);
+        Bukkit.getScheduler().runTaskTimer(this,this::tick,20,20);
+        getLogger().info("22 cards x 5 levels ready; real-time duration="+durationMillis/1000+"s, switch lock="+lockMillis/1000+"s. Remove legacy tarot datapacks before use.");
+    }
+    @Override public void onDisable() {
+        saveState();
+        for(Player p:Bukkit.getOnlinePlayers()) { removeAttributes(p);clampHealth(p);removeIcon(p); }
+    }
+    private static Component text(String s,int color) {return Component.text(s,TextColor.color(color)).decoration(TextDecoration.ITALIC,false);}
+    private void message(Player p,String s) {p.sendMessage(text("[塔罗] "+s,0xffdc70));}
+    private static String number(double n) {return String.format(Locale.ROOT,"%.3f",n).replaceAll("0+$","").replaceAll("\\.$","");}
+    private static String time(long ms) {long sec=(Math.max(0,ms)+999)/1000;return String.format(Locale.ROOT,"%02d:%02d:%02d",sec/3600,sec%3600/60,sec%60);}
+    private static Card card(int id) {return CARDS[id-1];}
+    private int value(ItemStack s,NamespacedKey key) {
+        if(s==null||s.getType()!=Material.PAPER||!s.hasItemMeta())return 0;
+        return s.getItemMeta().getPersistentDataContainer().getOrDefault(key,PersistentDataType.INTEGER,0);
+    }
+    private int cardId(ItemStack s) {int id=value(s,cardKey),level=value(s,levelKey);return id>=1&&id<=22&&level>=1&&level<=5?id:0;}
+    private String packageType(ItemStack s) {
+        if(s==null||s.getType()!=Material.PAPER||!s.hasItemMeta())return "";
+        String k=s.getItemMeta().getPersistentDataContainer().getOrDefault(packageKey,PersistentDataType.STRING,"");
+        return Set.of("pack","box","case").contains(k)?k:"";
+    }
+    private boolean tarot(ItemStack s) {return cardId(s)>0||!packageType(s).isEmpty();}
+    public ItemStack makeCard(int id,int level) {
+        Card c=card(id);ItemStack s=new ItemStack(Material.PAPER);ItemMeta m=s.getItemMeta();
+        m.setMaxStackSize(1);m.setItemModel(new NamespacedKey("tarot","card_"+id+"_"+level));
+        m.getPersistentDataContainer().set(cardKey,PersistentDataType.INTEGER,id);m.getPersistentDataContainer().set(levelKey,PersistentDataType.INTEGER,level);
+        m.itemName(text(RARITIES[c.rarity]+" · "+c.name+" "+"★".repeat(level),RARITY_COLORS[c.rarity]));
+        List<Component> lore=new ArrayList<>();
+        for(Bonus b:c.bonuses) lore.add(text(b.label+" +"+number(b.amount*SCALE[level-1]*(b.multiply?100:1))+(b.multiply?"%（基础值）":""),0x8fffb2));
+        lore.add(text("副手持牌 · 潜行 + 右键激活",0x80ddff));
+        lore.add(text("持续 "+time(durationMillis)+" · 换牌锁定 "+time(lockMillis),0xffdc70));
+        lore.add(text("现实时间计时，离线仍计时；移出副手仍生效",0xa9a9bd));
+        lore.add(text(level<5?"背包内两张同名同星卡重叠：升级一星":"已达到最高五星",0xe7bbff));
+        if(Arrays.stream(c.bonuses).anyMatch(b->b.attribute==Attribute.LUCK))lore.add(text("幸运不会增加本卡包的稀有牌概率",0xaaaaaa));
+        m.lore(lore);s.setItemMeta(m);return s;
+    }
+    public ItemStack makePackage(String kind,int amount) {
+        ItemStack s=new ItemStack(Material.PAPER,amount);ItemMeta m=s.getItemMeta();m.setMaxStackSize(64);
+        m.getPersistentDataContainer().set(packageKey,PersistentDataType.STRING,kind);m.setItemModel(new NamespacedKey("tarot",kind));
+        String name=switch(kind){case "pack"->"彩虹塔罗卡包 · 5 张";case "box"->"彩虹塔罗卡盒 · 8 包";default->"彩虹塔罗卡箱 · 48 盒";};
+        m.itemName(text(name,0xffdc70));m.lore(List.of(text("副手持有 · 潜行 + 右键拆开",0x80ddff),text("每包至少一张 SR 或更高；抽出均为一星",0xe7bbff)));
+        s.setItemMeta(m);return s;
+    }
+    private boolean give(Player p,ItemStack item) {
+        ItemStack[] next=InventoryPlan.deposit(p.getInventory().getStorageContents(),List.of(item));
+        if(next==null){message(p,"背包空间不足，发放未执行。请腾出空间后重试。");return false;}
+        p.getInventory().setStorageContents(next);return true;
+    }
+    private void open(Player p,String kind) {
+        List<ItemStack> rewards=new ArrayList<>();int best=0;List<String> drawn=new ArrayList<>();
+        if(kind.equals("case"))rewards.add(makePackage("box",48));
+        else if(kind.equals("box"))rewards.add(makePackage("pack",8));
+        else {
+            for(int i=0;i<5;i++) {
+                int rarity=Core.rarity(ThreadLocalRandom.current().nextInt(10000),i==4);best=Math.max(best,rarity);
+                Card[] pool=Arrays.stream(CARDS).filter(c->c.rarity==rarity).toArray(Card[]::new);
+                Card c=pool[ThreadLocalRandom.current().nextInt(pool.length)];rewards.add(makeCard(c.id,1));drawn.add(RARITIES[c.rarity]+" "+c.name);
+            }
+        }
+        ItemStack[] next=InventoryPlan.deposit(p.getInventory().getStorageContents(),rewards);
+        if(next==null){message(p,kind.equals("pack")?"背包至少需要 5 个空格，卡包未消耗。":"背包空间不足，原包装未消耗。请腾出空间后重试。");return;}
+        // All checks pass before either side of the exchange changes; events run on the server thread.
+        ItemStack held=p.getInventory().getItemInOffHand().clone();held.setAmount(held.getAmount()-1);
+        p.getInventory().setStorageContents(next);p.getInventory().setItemInOffHand(held);
+        if(kind.equals("case"))message(p,"拆开一箱：获得 48 盒。");
+        else if(kind.equals("box"))message(p,"拆开一盒：获得 8 包。");
+        else {
+            message(p,"开包获得："+String.join("、",drawn));
+            p.showTitle(net.kyori.adventure.title.Title.title(text(RARITIES[best],RARITY_COLORS[best]),text("五张新牌 · 命运揭晓",0xffffff)));
+            burst(p,Math.max(1,best+1));
+            p.playSound(p.getLocation(),best>=2?Sound.UI_TOAST_CHALLENGE_COMPLETE:Sound.ENTITY_EXPERIENCE_ORB_PICKUP,.75f,1.1f);
+        }
+        p.playSound(p.getLocation(),Sound.ITEM_BUNDLE_DROP_CONTENTS,.7f,1);
+    }
+    private boolean handle(Player p) {
+        if(!p.isSneaking()||p.getGameMode()==GameMode.SPECTATOR)return false;
+        migrate(p);
+        ItemStack off=p.getInventory().getItemInOffHand();if(!tarot(off))return false;
+        long now=System.currentTimeMillis();Long previous=gestures.put(p.getUniqueId(),now);
+        if(previous!=null&&now-previous<250)return true;
+        String pack=packageType(off);if(!pack.isEmpty()){open(p,pack);return true;}
+        Core.Active old=active.get(p.getUniqueId());
+        if(old!=null&&old.locked(now)){message(p,"当前「"+card(old.card()).name+"」仍锁定，"+time(old.unlocks()-now)+" 后可切换或重新激活。");return true;}
+        int id=cardId(off),level=value(off,levelKey);
+        Core.Active state=new Core.Active(id,level,now,now+durationMillis,now+lockMillis);
+        active.put(p.getUniqueId(),state);
+        apply(p,state);updateIcon(p,state);saveState();burst(p,level);
+        p.playSound(p.getLocation(),Sound.BLOCK_ENCHANTMENT_TABLE_USE,.8f,.8f+level*.12f);
+        message(p,"已激活「"+card(id).name+"」"+"★".repeat(level)+"，持续 "+time(durationMillis)+"；"+time(lockMillis)+" 后可换牌。");return true;
+    }
+    @EventHandler(priority=EventPriority.HIGH) public void interact(PlayerInteractEvent e) {
+        if(e.getAction()!=Action.RIGHT_CLICK_AIR&&e.getAction()!=Action.RIGHT_CLICK_BLOCK)return;
+        // Paper may deliver the usable offhand gesture without a mainhand event.
+        if(handle(e.getPlayer())){e.setUseInteractedBlock(Event.Result.DENY);e.setUseItemInHand(Event.Result.DENY);e.setCancelled(true);}
+    }
+    @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void entityInteract(PlayerInteractEntityEvent e) {
+        if(handle(e.getPlayer()))e.setCancelled(true);
+    }
+    @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void merge(InventoryClickEvent e) {
+        if(!(e.getWhoClicked() instanceof Player p)||e.getClickedInventory()!=p.getInventory())return;
+        if(e.getSlot()<0||e.getSlot()>35)return;
+        ItemStack cursor=migrateItem(e.getCursor()),target=migrateItem(e.getCurrentItem());int a=cardId(cursor),b=cardId(target);
+        if(a==0||b==0||!e.getClick().isMouseClick()||e.isShiftClick())return;
+        e.setCancelled(true);
+        if(e instanceof InventoryCreativeEvent){message(p,"请切换生存模式后合成升级。");return;}
+        if(!Core.canMerge(a,value(cursor,levelKey),b,value(target,levelKey),cursor.getAmount(),target.getAmount())) {
+            message(p,"需要两张同名、同星级的卡；五星已满级。");return;
+        }
+        int level=value(target,levelKey)+1;
+        e.setCurrentItem(makeCard(a,level));e.getView().setCursor(null);
+        p.playSound(p.getLocation(),Sound.BLOCK_ENCHANTMENT_TABLE_USE,.8f,1.4f);burst(p,level);
+        message(p,"升级成功：「"+card(a).name+"」"+"★".repeat(level)+"。已激活效果保持原星级，重新激活后更新。");
+    }
+    @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void drag(InventoryDragEvent e) {
+        if(!(e.getWhoClicked() instanceof Player p)||e.getRawSlots().size()!=1)return;
+        int raw=e.getRawSlots().iterator().next();
+        if(e.getView().getInventory(raw)!=p.getInventory())return;
+        int slot=e.getView().convertSlot(raw);if(slot<0||slot>35)return;
+        ItemStack cursor=migrateItem(e.getOldCursor()),target=migrateItem(p.getInventory().getItem(slot));
+        int a=cardId(cursor),b=cardId(target);if(a==0||b==0)return;
+        e.setCancelled(true);
+        if(p.getGameMode()==GameMode.CREATIVE||!Core.canMerge(a,value(cursor,levelKey),b,value(target,levelKey),cursor.getAmount(),target.getAmount()))return;
+        p.getInventory().setItem(slot,makeCard(a,value(target,levelKey)+1));e.getView().setCursor(null);
+        p.playSound(p.getLocation(),Sound.BLOCK_ENCHANTMENT_TABLE_USE,.8f,1.4f);message(p,"同名同星卡升级成功。");
+    }
+    private ItemStack migrateItem(ItemStack item) {
+        if(item==null||item.getType()!=Material.PAPER||tarot(item))return item;
+        try {
+            var root=Bukkit.getUnsafe().serializeItemAsJson(item);
+            var components=root.getAsJsonObject("components");if(components==null)return item;
+            var raw=components.get("minecraft:custom_data");if(raw==null)return item;
+            // Paper serializes custom_data as SNBT text. V2 uses simple compound/int/string
+            // tags, which Gson's lenient reader accepts without changing the original item.
+            var data=raw.isJsonPrimitive()?com.google.gson.JsonParser.parseString(raw.getAsString()).getAsJsonObject():raw.getAsJsonObject();
+            var old=data.getAsJsonObject("tarot");if(old==null)return item;
+            ItemStack result=null;
+            if(old.has("card")&&old.has("level")){
+                int id=old.get("card").getAsInt(),level=old.get("level").getAsInt();
+                if(id>=1&&id<=22&&level>=1&&level<=5&&item.getAmount()==1)result=makeCard(id,level);
+            } else if(old.has("package")) {
+                String k=old.get("package").getAsString();
+                if(Set.of("pack","box","case").contains(k)&&item.getAmount()<=64)result=makePackage(k,item.getAmount());
+            }
+            return result==null?item:result;
+        } catch(RuntimeException ex){return item;}
+    }
+    private int migrate(Player p) {
+        int count=0;
+        for(int i=0;i<p.getInventory().getSize();i++){
+            ItemStack old=p.getInventory().getItem(i),next=migrateItem(old);
+            if(next!=old){p.getInventory().setItem(i,next);count++;}
+        }
+        return count;
+    }
+    @EventHandler public void inventoryClose(InventoryCloseEvent e){if(e.getPlayer() instanceof Player p)Bukkit.getScheduler().runTask(this,()->{if(p.isOnline())migrate(p);});}
+    private Set<Attribute> allAttributes() {return Arrays.stream(CARDS).flatMap(c->Arrays.stream(c.bonuses)).map(Bonus::attribute).collect(Collectors.toSet());}
+    private void removeAttributes(Player p) {
+        for(Attribute type:allAttributes()) {
+            AttributeInstance attr=p.getAttribute(type);if(attr==null)continue;
+            for(AttributeModifier m:new ArrayList<>(attr.getModifiers())) {
+                NamespacedKey key=m.getKey();
+                if(key.getNamespace().equals("tarotrainbow") || (key.getNamespace().equals("tarot")&&key.getKey().equals(type.getKey().getKey())))attr.removeModifier(m);
+            }
+        }
+    }
+    private void clampHealth(Player p) {AttributeInstance health=p.getAttribute(Attribute.MAX_HEALTH);if(health!=null&&!p.isDead()&&p.getHealth()>health.getValue())p.setHealth(health.getValue());}
+    private void apply(Player p,Core.Active state) {
+        removeAttributes(p);
+        for(Bonus b:card(state.card()).bonuses) {
+            AttributeInstance attr=p.getAttribute(b.attribute);if(attr==null)continue;
+            AttributeModifier modifier=new AttributeModifier(new NamespacedKey(this,b.attribute.getKey().getKey()),b.amount*SCALE[state.level()-1],b.multiply?AttributeModifier.Operation.ADD_SCALAR:AttributeModifier.Operation.ADD_NUMBER);
+            attr.addTransientModifier(modifier);
+        }
+        clampHealth(p);
+    }
+    private void updateIcon(Player p,Core.Active state) {
+        if(!iconEnabled)return;
+        PotionEffect real=p.getPotionEffect(PotionEffectType.LUCK);
+        if(real!=null) {
+            if(fakeIcon.remove(p.getUniqueId()))p.sendPotionEffectChange(p,real);
+            return;
+        }
+        int ticks=(int)Math.max(1,Math.min(Integer.MAX_VALUE,(state.remaining(System.currentTimeMillis())+49)/50));
+        p.sendPotionEffectChange(p,new PotionEffect(PotionEffectType.LUCK,ticks,0,true,false,true));fakeIcon.add(p.getUniqueId());
+    }
+    private void removeIcon(Player p) {
+        if(!fakeIcon.remove(p.getUniqueId()))return;
+        PotionEffect real=p.getPotionEffect(PotionEffectType.LUCK);
+        if(real!=null)p.sendPotionEffectChange(p,real);else p.sendPotionEffectChangeRemove(p,PotionEffectType.LUCK);
+    }
+    private void restore(Player p) {
+        migrate(p);
+        removeAttributes(p);Core.Active s=active.get(p.getUniqueId());
+        if(s!=null&&!s.expired(System.currentTimeMillis())){apply(p,s);updateIcon(p,s);}else{active.remove(p.getUniqueId());removeIcon(p);clampHealth(p);}
+    }
+    private void tick() {
+        long now=System.currentTimeMillis();boolean changed=false;seconds++;
+        Iterator<Map.Entry<UUID,Core.Active>> it=active.entrySet().iterator();
+        while(it.hasNext()){
+            var entry=it.next();Core.Active s=entry.getValue();Player p=Bukkit.getPlayer(entry.getKey());
+            if(s.expired(now)){
+                it.remove();changed=true;
+                if(p!=null){removeAttributes(p);clampHealth(p);removeIcon(p);message(p,"「"+card(s.card()).name+"」效果已到期。");p.playSound(p.getLocation(),Sound.BLOCK_NOTE_BLOCK_CHIME,.5f,.8f);}
+                continue;
+            }
+            if(p==null||p.isDead())continue;
+            updateIcon(p,s);
+            if(barEnabled&&(tarot(p.getInventory().getItemInOffHand())||p.hasPotionEffect(PotionEffectType.LUCK)))
+                p.sendActionBar(text(card(s.card()).name+" "+"★".repeat(s.level())+" | 剩余 "+time(s.remaining(now))+" | "+(s.locked(now)?"换牌 "+time(s.unlocks()-now):"可以换牌"),RARITY_COLORS[card(s.card()).rarity]));
+        }
+        if(changed||seconds%60==0)saveState();
+    }
+    @EventHandler public void join(PlayerJoinEvent e) {Bukkit.getScheduler().runTaskLater(this,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},10);}
+    @EventHandler public void quit(PlayerQuitEvent e) {removeAttributes(e.getPlayer());fakeIcon.remove(e.getPlayer().getUniqueId());gestures.remove(e.getPlayer().getUniqueId());saveState();}
+    @EventHandler public void respawn(PlayerRespawnEvent e) {Bukkit.getScheduler().runTaskLater(this,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},2);}
+    @EventHandler public void world(PlayerChangedWorldEvent e) {Bukkit.getScheduler().runTaskLater(this,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},2);}
+    @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void effect(EntityPotionEffectEvent e) {
+        if(e.getEntity() instanceof Player p&&e.getModifiedType()==PotionEffectType.LUCK)
+            Bukkit.getScheduler().runTask(this,()->{Core.Active s=active.get(p.getUniqueId());if(p.isOnline()&&s!=null&&!s.expired(System.currentTimeMillis()))updateIcon(p,s);});
+    }
+    private void burst(Player p,int level) {
+        UUID id=p.getUniqueId();
+        new BukkitRunnable(){int frame;public void run(){
+            Player current=Bukkit.getPlayer(id);if(current==null||current.isDead()||frame++>=10){cancel();return;}
+            Location center=current.getLocation().add(0,.2+frame*.10,0);int count=14+level*3;
+            for(int i=0;i<count;i++) {double angle=2*Math.PI*i/count+frame*.18;Location point=center.clone().add(Math.cos(angle)*(.65+level*.10),0,Math.sin(angle)*(.65+level*.10));
+                current.getWorld().spawnParticle(Particle.DUST,point,1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(RAINBOW[(i+frame)%7]),.8f+level*.1f));}
+        }}.runTaskTimer(this,0,2);
+    }
+    private void loadState() {
+        YamlConfiguration y=YamlConfiguration.loadConfiguration(stateFile);var section=y.getConfigurationSection("players");if(section==null)return;
+        for(String key:section.getKeys(false))try{
+            String path="players."+key+".";int id=y.getInt(path+"card"),level=y.getInt(path+"level");
+            if(id<1||id>22||level<1||level>5)continue;
+            Core.Active s=new Core.Active(id,level,y.getLong(path+"activated"),y.getLong(path+"expires"),y.getLong(path+"unlocks"));
+            if(!s.expired(System.currentTimeMillis()))active.put(UUID.fromString(key),s);
+        }catch(IllegalArgumentException ex){getLogger().warning("Ignored invalid player state: "+key);}
+    }
+    private void saveState() {
+        YamlConfiguration y=new YamlConfiguration();active.forEach((id,s)->{String p="players."+id+".";y.set(p+"card",s.card());y.set(p+"level",s.level());y.set(p+"activated",s.activated());y.set(p+"expires",s.expires());y.set(p+"unlocks",s.unlocks());});
+        try {File tmp=new File(getDataFolder(),"players.yml.tmp");y.save(tmp);try{Files.move(tmp.toPath(),stateFile.toPath(),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);}catch(java.nio.file.AtomicMoveNotSupportedException ex){Files.move(tmp.toPath(),stateFile.toPath(),StandardCopyOption.REPLACE_EXISTING);}}
+        catch(IOException ex){getLogger().severe("Cannot persist tarot activation deadlines: "+ex.getMessage());}
+    }
+    @Override public boolean onCommand(CommandSender sender,Command command,String label,String[] args) {
+        if(args.length>0&&args[0].equalsIgnoreCase("migrate")&&sender instanceof Player p){message(p,"已更新 "+migrate(p)+" 个旧版卡牌／包装。");return true;}
+        if(args.length>0&&args[0].equalsIgnoreCase("selftest")&&sender.hasPermission("tarot.admin")){selftest();sender.sendMessage("TAROT SELFTEST PASS");return true;}
+        if(args.length==0||args[0].equalsIgnoreCase("status")) {
+            if(!(sender instanceof Player p)){sender.sendMessage("Use /tarot give <player> <pack|box|case> [count] or /tarot card <player> <1..22> <1..5>");return true;}
+            Core.Active s=active.get(p.getUniqueId());long now=System.currentTimeMillis();
+            if(s==null||s.expired(now)){message(p,"当前没有激活的塔罗牌。副手持牌，潜行 + 右键激活。");return true;}
+            message(p,card(s.card()).name+" "+"★".repeat(s.level())+" | 剩余 "+time(s.remaining(now))+" | "+(s.locked(now)?"换牌锁定 "+time(s.unlocks()-now):"可以更换"));
+            for(Bonus b:card(s.card()).bonuses)message(p,b.label+" +"+number(b.amount*SCALE[s.level()-1]*(b.multiply?100:1))+(b.multiply?"%（基础值）":""));
+            return true;
+        }
+        if(!sender.hasPermission("tarot.admin")){sender.sendMessage("没有管理员权限。");return true;}
+        try{
+            if(args.length<2)return false;Player p=Bukkit.getPlayerExact(args[1]);if(p==null){sender.sendMessage("玩家必须在线。");return true;}
+            switch(args[0].toLowerCase(Locale.ROOT)){
+                case "give"->{if(args.length<3||!Set.of("pack","box","case").contains(args[2]))return false;int count=args.length>3?Integer.parseInt(args[3]):1;if(count<1||count>64)throw new IllegalArgumentException();if(!give(p,makePackage(args[2],count))){sender.sendMessage("发放失败：背包空间不足，未产生任何物品。");return true;}}
+                case "card"->{if(args.length<4)return false;int id=Integer.parseInt(args[2]),level=Integer.parseInt(args[3]);if(id<1||id>22||level<1||level>5)throw new IllegalArgumentException();if(!give(p,makeCard(id,level))){sender.sendMessage("发放失败：背包空间不足，未产生任何物品。");return true;}}
+                case "clear"->{active.remove(p.getUniqueId());removeAttributes(p);clampHealth(p);removeIcon(p);saveState();message(p,"管理员已清除塔罗效果及换牌锁定。");}
+                default->{return false;}
+            }
+            sender.sendMessage("塔罗操作已完成。");return true;
+        }catch(IllegalArgumentException ex){sender.sendMessage("参数无效：牌编号 1–22、等级 1–5、包装数量 1–64。");return true;}
+    }
+    @Override public List<String> onTabComplete(CommandSender sender,Command cmd,String alias,String[] args) {
+        List<String> options=new ArrayList<>();
+        if(args.length==1)options=sender.hasPermission("tarot.admin")?List.of("status","migrate","give","card","clear","selftest"):List.of("status","migrate");
+        else if(sender.hasPermission("tarot.admin")) {
+            if(args.length==2)options=Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+            else if(args.length==3&&args[0].equals("give"))options=List.of("pack","box","case");
+            else if(args.length==3&&args[0].equals("card"))for(int i=1;i<=22;i++)options.add(""+i);
+            else if(args.length==4&&args[0].equals("card"))options=List.of("1","2","3","4","5");
+        }
+        String prefix=args[args.length-1].toLowerCase(Locale.ROOT);return options.stream().filter(s->s.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
+    }
+    private void selftest() {
+        java.util.function.Consumer<Boolean> check=b->{if(!b)throw new IllegalStateException("Tarot inventory test failed");};
+        ItemStack[] full=new ItemStack[36];for(int i=0;i<36;i++)full[i]=new ItemStack(Material.STONE,64);
+        List<ItemStack> five=java.util.stream.IntStream.range(1,6).mapToObj(i->makeCard(i,1)).toList();
+        check.accept(InventoryPlan.deposit(full,five)==null);
+        for(int i=0;i<4;i++)full[i]=null;check.accept(InventoryPlan.deposit(full,five)==null);
+        check.accept(full[0]==null&&full[4].getAmount()==64);
+        full[4]=null;ItemStack[] result=InventoryPlan.deposit(full,five);check.accept(result!=null);
+        for(int i=0;i<5;i++)check.accept(cardId(result[i])==i+1&&full[i]==null);
+        ItemStack[] filled=new ItemStack[36];for(int i=0;i<36;i++)filled[i]=new ItemStack(Material.STONE,64);
+        filled[0]=makePackage("box",16);
+        ItemStack[] box=InventoryPlan.deposit(filled,List.of(makePackage("box",48)));check.accept(box!=null&&box[0].getAmount()==64&&filled[0].getAmount()==16);
+        filled[0]=makePackage("box",17);check.accept(InventoryPlan.deposit(filled,List.of(makePackage("box",48)))==null);
+        for(int id=1;id<=22;id++)for(int level=1;level<=5;level++){
+            ItemStack c=makeCard(id,level);check.accept(cardId(c)==id&&value(c,levelKey)==level&&c.getMaxStackSize()==1);
+            check.accept(c.getItemMeta().getItemModel().getKey().equals("card_"+id+"_"+level));
+        }
+        // Use the exact command-item parser for legacy component coverage.
+        var legacy=Bukkit.getItemFactory().createItemStack("minecraft:paper[minecraft:custom_data={tarot:{card:8,level:3}},minecraft:max_stack_size=1]");
+        ItemStack updated=migrateItem(legacy);
+        check.accept(cardId(updated)==8&&value(updated,levelKey)==3);
+        for(String k:List.of("pack","box","case")){
+            var old=Bukkit.getItemFactory().createItemStack("minecraft:paper[minecraft:custom_data={tarot:{package:\""+k+"\"}},minecraft:max_stack_size=1]");
+            check.accept(packageType(migrateItem(old)).equals(k));
+        }
+        getLogger().info("TAROT SELFTEST PASS: full/four/five free slots; stack16+48 and17+48; no mutation on reject;110 cards; legacy migration.");
+    }
+}

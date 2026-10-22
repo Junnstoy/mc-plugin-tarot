@@ -1,0 +1,7 @@
+# Real elapsed time: offline time and server downtime count.
+duration-seconds: 86400
+switch-lock-seconds: 1800
+# Client-only LUCK status icon. A real luck potion takes priority.
+status-icon: true
+# Brief actionbar shows the card and lock timer when holding a tarot item.
+actionbar: true
