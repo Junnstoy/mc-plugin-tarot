@@ -1,0 +1,13 @@
+*.class
+*.jar
+*.zip
+*.log
+__pycache__/
+.idea/
+.vscode/
+plugin/classes/
+plugin/tmp/
+deps/
+server/
+.env
+.env.*

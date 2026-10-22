@@ -1,0 +1,15 @@
+attribute @s minecraft:armor modifier remove tarot:armor
+attribute @s minecraft:attack_damage modifier remove tarot:attack_damage
+attribute @s minecraft:attack_knockback modifier remove tarot:attack_knockback
+attribute @s minecraft:attack_speed modifier remove tarot:attack_speed
+attribute @s minecraft:jump_strength modifier remove tarot:jump_strength
+attribute @s minecraft:knockback_resistance modifier remove tarot:knockback_resistance
+attribute @s minecraft:luck modifier remove tarot:luck
+attribute @s minecraft:max_health modifier remove tarot:max_health
+attribute @s minecraft:movement_speed modifier remove tarot:movement_speed
+attribute @s minecraft:safe_fall_distance modifier remove tarot:safe_fall_distance
+attribute @s minecraft:sneaking_speed modifier remove tarot:sneaking_speed
+attribute @s minecraft:step_height modifier remove tarot:step_height
+scoreboard players set @s tr_time 0
+scoreboard players set @s tr_active 0
+scoreboard players set @s tr_alvl 0

@@ -1,0 +1,1 @@
+give @s minecraft:paper[minecraft:max_stack_size=1,minecraft:custom_data={tarot:{package:"case"}},minecraft:item_name={"text":"塔罗卡箱 · 48盒","color":"gold","italic":false}]

@@ -1,0 +1,1 @@
+give @s minecraft:paper[minecraft:max_stack_size=1,minecraft:custom_data={tarot:{card:18,level:1}},minecraft:item_name={"text":"R · 星星 ★1","color":"white","italic":false},minecraft:lore=[{"text":"副手潜行激活 | 持续8秒","color":"gray","italic":false},{"text":"冷却60秒 | 重复卡可升级","color":"gray","italic":false}]]

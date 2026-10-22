@@ -1,0 +1,4 @@
+# Preserve imported snapshot bytes, including original line endings.
+* -text
+*.png binary
+*.ogg binary
