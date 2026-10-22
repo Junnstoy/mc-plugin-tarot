@@ -64,6 +64,9 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     // Independent deadlines survive clearing a buff; active records keep their
     // legacy unlock field so existing players.yml files remain readable.
     private final Map<UUID,Long> cooldowns=new HashMap<>();
+    // Cache bypass while offline so an unlimited effect survives server restarts.
+    // Online permission is always authoritative; original deadlines remain intact.
+    private final Set<UUID> bypassPlayers=new HashSet<>();
     private final Map<UUID,Long> gestures=new HashMap<>();
     private final Map<UUID,Long> creativeMergeHints=new HashMap<>();
     private final Set<UUID> fakeIcon=new HashSet<>();
@@ -74,6 +77,9 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     private int seconds;
     private AlbumService albums;
     private ChargeController charging;
+    private Runnable placeholderCleanup;
+    private final java.util.concurrent.ConcurrentMap<UUID,TarotPlaceholderValues.Snapshot> placeholderCache=new java.util.concurrent.ConcurrentHashMap<>();
+    private final Set<UUID> placeholderPending=java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -87,10 +93,13 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         for(Player p:Bukkit.getOnlinePlayers()) restore(p);
         albums=new AlbumService(this);albums.start();
         charging=new ChargeController(this,s->cardId(s)>0,this::canCharge,this::renderCast,this::activateCard);charging.start();
+        if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI"))placeholderCleanup=TarotPlaceholders.install(this);
         Bukkit.getScheduler().runTaskTimer(this,this::tick,20,20);
         getLogger().info("22 cards x 5 levels ready; real-time duration="+durationMillis/1000+"s, switch lock="+lockMillis/1000+"s. Remove legacy tarot datapacks before use.");
     }
     @Override public void onDisable() {
+        if(placeholderCleanup!=null){placeholderCleanup.run();placeholderCleanup=null;}
+        placeholderCache.clear();placeholderPending.clear();
         if(charging!=null)charging.shutdown();
         if(albums!=null)albums.shutdown();
         saveState();
@@ -142,7 +151,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         ItemStack s=new ItemStack(Material.PAPER,amount);ItemMeta m=s.getItemMeta();m.setMaxStackSize(64);
         m.getPersistentDataContainer().set(packageKey,PersistentDataType.STRING,kind);appearance(m,kind);
         String name=switch(kind){case "pack"->"彩虹塔罗卡包 · 5 张";case "box"->"彩虹塔罗卡盒 · 8 包";default->"彩虹塔罗卡箱 · 48 盒";};
-        m.itemName(text(name,0xffdc70));m.lore(List.of(text("副手持有 · 潜行 + 右键拆开",0x80ddff),text("每包至少一张 SR 或更高；抽出均为一星",0xe7bbff)));
+        m.itemName(text(name,0xffdc70));m.lore(List.of(text("主手持有 · 右键拆开",0x80ddff),text("每包至少一张 SR 或更高；抽出均为一星",0xe7bbff)));
         s.setItemMeta(m);return s;
     }
     private boolean give(Player p,List<ItemStack> items) {
@@ -151,6 +160,14 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         p.getInventory().setStorageContents(next);return true;
     }
     private void open(Player p,String kind) {
+        PlayerInventory inventory=p.getInventory();int slot=inventory.getHeldItemSlot();
+        ItemStack held=inventory.getItemInMainHand();
+        if(!packageType(held).equals(kind))return;
+        // The main hand is part of storage. Plan its consumption and all rewards
+        // together so committing rewards cannot restore or overwrite the held item.
+        ItemStack[] storage=inventory.getStorageContents().clone();
+        ItemStack remaining=held.clone();remaining.setAmount(remaining.getAmount()-1);
+        storage[slot]=remaining.getAmount()>0?remaining:null;
         List<ItemStack> rewards=new ArrayList<>();int best=0;List<String> drawn=new ArrayList<>();
         if(kind.equals("case"))rewards.add(makePackage("box",48));
         else if(kind.equals("box"))rewards.add(makePackage("pack",8));
@@ -161,11 +178,10 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
                 Card c=pool[ThreadLocalRandom.current().nextInt(pool.length)];rewards.add(makeCard(c.id,1));drawn.add(RARITIES[c.rarity]+" "+c.name);
             }
         }
-        ItemStack[] next=InventoryPlan.deposit(p.getInventory().getStorageContents(),rewards);
-        if(next==null){message(p,kind.equals("pack")?"背包至少需要 5 个空格，卡包未消耗。":"背包空间不足，原包装未消耗。请腾出空间后重试。");return;}
+        ItemStack[] next=InventoryPlan.deposit(storage,rewards);
+        if(next==null){message(p,kind.equals("pack")?"背包空间不足以容纳 5 张卡牌，卡包未消耗。请腾出空间后重试。":"背包空间不足，原包装未消耗。请腾出空间后重试。");return;}
         // All checks pass before either side of the exchange changes; events run on the server thread.
-        ItemStack held=p.getInventory().getItemInOffHand().clone();held.setAmount(held.getAmount()-1);
-        p.getInventory().setStorageContents(next);p.getInventory().setItemInOffHand(held);
+        inventory.setStorageContents(next);
         if(kind.equals("case"))message(p,"拆开一箱：获得 48 盒。");
         else if(kind.equals("box"))message(p,"拆开一盒：获得 8 包。");
         else {
@@ -177,17 +193,18 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         p.playSound(p.getLocation(),Sound.ITEM_BUNDLE_DROP_CONTENTS,.7f,1);
     }
     private boolean handlePackage(Player p) {
-        if(!p.isSneaking()||p.getGameMode()==GameMode.SPECTATOR)return false;
+        if(p.getGameMode()==GameMode.SPECTATOR)return false;
         migrate(p);
-        ItemStack off=p.getInventory().getItemInOffHand();String pack=packageType(off);if(pack.isEmpty())return false;
-        long now=System.currentTimeMillis();Long previous=gestures.put(p.getUniqueId(),now);
+        String pack=packageType(p.getInventory().getItemInMainHand());if(pack.isEmpty())return false;
+        long now=System.currentTimeMillis();Long previous=gestures.get(p.getUniqueId());
         if(previous!=null&&now-previous<250)return true;
+        gestures.put(p.getUniqueId(),now);
         open(p,pack);return true;
     }
     boolean isCharging(Player p){return charging!=null&&charging.isCharging(p);}
     private boolean canCharge(Player p){
         if(p.getGameMode()==GameMode.SPECTATOR)return false;
-        long cooldown=cooldownRemaining(p.getUniqueId(),System.currentTimeMillis());
+        long cooldown=effectiveCooldown(p,System.currentTimeMillis());
         if(cooldown>0){message(p,"换牌仍锁定，"+time(cooldown)+" 后可切换或重新激活。");return false;}
         return true;
     }
@@ -203,15 +220,21 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         int id=cardId(held),level=value(held,levelKey);
         Core.Active state=new Core.Active(id,level,now,now+durationMillis,now+lockMillis);
         active.put(p.getUniqueId(),state);
+        boolean unlimited=bypass(p);
         cooldowns.put(p.getUniqueId(),Math.min(state.expires(),state.unlocks()));
         apply(p,state);updateIcon(p,state);saveState();renderCast(p,1);
         p.sendActionBar(text("「"+card(id).name+"」已激活",0x8fffb2));
         p.playSound(p.getLocation(),Sound.BLOCK_ENCHANTMENT_TABLE_USE,.8f,.8f+level*.12f);
-        message(p,"已激活「"+card(id).name+"」"+"★".repeat(level)+"，持续 "+time(durationMillis)+"；"+time(lockMillis)+" 后可换牌。");
+        message(p,"已激活「"+card(id).name+"」"+"★".repeat(level)+(unlimited?"，权限豁免：效果永久，可立即换牌。":"，持续 "+time(durationMillis)+"；"+time(lockMillis)+" 后可换牌。"));
     }
     @EventHandler(priority=EventPriority.HIGH) public void interact(PlayerInteractEvent e) {
         if(e.getAction()!=Action.RIGHT_CLICK_AIR&&e.getAction()!=Action.RIGHT_CLICK_BLOCK)return;
         Player p=e.getPlayer();
+        if(!packageType(p.getInventory().getItemInMainHand()).isEmpty()){
+            if(e.getHand()!=EquipmentSlot.HAND||e.useItemInHand()==Event.Result.DENY)return;
+            if(handlePackage(p)){e.setUseInteractedBlock(Event.Result.DENY);e.setUseItemInHand(Event.Result.DENY);e.setCancelled(true);}
+            return;
+        }
         if(e.getHand()==EquipmentSlot.HAND&&cardId(p.getInventory().getItemInMainHand())>0){
             if(e.useItemInHand()==Event.Result.DENY)return;
             migrate(p);
@@ -222,11 +245,13 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         // Only the main hand can start a card cast. Keep offhand cards unconsumable.
         if(e.getHand()==EquipmentSlot.OFF_HAND&&cardId(p.getInventory().getItemInOffHand())>0){e.setUseItemInHand(Event.Result.DENY);return;}
         if(albums!=null&&albums.use(e.getPlayer())){e.setUseInteractedBlock(Event.Result.DENY);e.setUseItemInHand(Event.Result.DENY);e.setCancelled(true);return;}
-        if(handlePackage(e.getPlayer())){e.setUseInteractedBlock(Event.Result.DENY);e.setUseItemInHand(Event.Result.DENY);e.setCancelled(true);}
     }
     @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void entityInteract(PlayerInteractEntityEvent e) {
+        if(!packageType(e.getPlayer().getInventory().getItemInMainHand()).isEmpty()){
+            if(e.getHand()==EquipmentSlot.HAND&&handlePackage(e.getPlayer()))e.setCancelled(true);
+            return;
+        }
         if(albums!=null&&albums.use(e.getPlayer())){e.setCancelled(true);return;}
-        if(handlePackage(e.getPlayer()))e.setCancelled(true);
     }
     @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void merge(InventoryClickEvent e) {
         if(!(e.getWhoClicked() instanceof Player p)||e.getClickedInventory()!=p.getInventory())return;
@@ -267,11 +292,11 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
             int id=cardId(item);String model=id>0?"card_"+id+"_"+value(item,levelKey):packageType(item);
             ItemMeta meta=item.getItemMeta();
             List<Component> lore=meta.lore();
-            List<Component> updatedLore=id>0&&lore!=null?lore.stream().map(TarotPlugin::migrateCardLore).toList():lore;
+            List<Component> updatedLore=lore==null?null:lore.stream().map(id>0?TarotPlugin::migrateCardLore:TarotPlugin::migratePackageLore).toList();
             if((id==0||ChargeController.isConfigured(item))&&vanillaPaperModel(meta)&&
                     meta.getCustomModelDataComponent().getStrings().equals(List.of("tarot:"+model))&&Objects.equals(lore,updatedLore))return item;
             ItemStack updated=item.clone();appearance(meta,model);
-            if(id>0)meta.lore(updatedLore);
+            meta.lore(updatedLore);
             updated.setItemMeta(meta);if(id>0)ChargeController.configureCard(updated);return updated;
         }
         try {
@@ -299,6 +324,10 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
                 .matchLiteral(old).replacement("主手持牌 · 长按右键 5 秒激活").build());
         return line.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder()
             .matchLiteral("移出副手仍生效").replacement("移出主手仍生效").build());
+    }
+    private static Component migratePackageLore(Component line){
+        return line.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder()
+            .matchLiteral("副手持有 · 潜行 + 右键拆开").replacement("主手持有 · 右键拆开").build());
     }
     private int migrate(Player p) {
         int count=0;
@@ -336,7 +365,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
             if(fakeIcon.remove(p.getUniqueId()))p.sendPotionEffectChange(p,real);
             return;
         }
-        int ticks=(int)Math.max(1,Math.min(Integer.MAX_VALUE,(state.remaining(System.currentTimeMillis())+49)/50));
+        int ticks=bypass(p)?-1:(int)Math.max(1,Math.min(Integer.MAX_VALUE,(state.remaining(System.currentTimeMillis())+49)/50));
         p.sendPotionEffectChange(p,new PotionEffect(PotionEffectType.LUCK,ticks,0,true,false,true));fakeIcon.add(p.getUniqueId());
     }
     private void removeIcon(Player p) {
@@ -347,7 +376,8 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     private void restore(Player p) {
         migrate(p);
         removeAttributes(p);Core.Active s=active.get(p.getUniqueId());
-        if(s!=null&&!s.expired(System.currentTimeMillis())){apply(p,s);updateIcon(p,s);}else{active.remove(p.getUniqueId());removeIcon(p);clampHealth(p);}
+        boolean unlimited=bypass(p);
+        if(s!=null&&(unlimited||!s.expired(System.currentTimeMillis()))){apply(p,s);updateIcon(p,s);}else{active.remove(p.getUniqueId());removeIcon(p);clampHealth(p);}
     }
     private void tick() {
         long now=System.currentTimeMillis();boolean changed=false;seconds++;
@@ -355,7 +385,10 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         Iterator<Map.Entry<UUID,Core.Active>> it=active.entrySet().iterator();
         while(it.hasNext()){
             var entry=it.next();Core.Active s=entry.getValue();Player p=Bukkit.getPlayer(entry.getKey());
-            if(s.expired(now)){
+            boolean before=bypassPlayers.contains(entry.getKey());
+            boolean unlimited=p==null?before:bypass(p);
+            changed|=before!=unlimited;
+            if(!unlimited&&s.expired(now)){
                 it.remove();changed=true;
                 if(p!=null){removeAttributes(p);clampHealth(p);removeIcon(p);message(p,"「"+card(s.card()).name+"」效果已到期。");p.playSound(p.getLocation(),Sound.BLOCK_NOTE_BLOCK_CHIME,.5f,.8f);}
                 continue;
@@ -363,17 +396,18 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
             if(p==null||p.isDead())continue;
             updateIcon(p,s);
             if(barEnabled&&!isCharging(p)&&(tarot(p.getInventory().getItemInMainHand())||p.hasPotionEffect(PotionEffectType.LUCK)))
-                p.sendActionBar(text(card(s.card()).name+" "+"★".repeat(s.level())+" | 剩余 "+time(s.remaining(now))+" | "+(cooldownRemaining(entry.getKey(),now)>0?"换牌 "+time(cooldownRemaining(entry.getKey(),now)):"可以换牌"),RARITY_COLORS[card(s.card()).rarity]));
+                p.sendActionBar(text(card(s.card()).name+" "+"★".repeat(s.level())+" | 剩余 "+(unlimited?"永久":time(s.remaining(now)))+" | "+(effectiveCooldown(p,now)>0?"换牌 "+time(effectiveCooldown(p,now)):"可以换牌"),RARITY_COLORS[card(s.card()).rarity]));
         }
         if(changed||seconds%60==0)saveState();
+        if(placeholderCleanup!=null)for(Player player:Bukkit.getOnlinePlayers())refreshPlaceholder(player.getUniqueId(),player);
     }
     @EventHandler public void join(PlayerJoinEvent e) {Bukkit.getScheduler().runTaskLater(this,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},10);}
-    @EventHandler public void quit(PlayerQuitEvent e) {removeAttributes(e.getPlayer());fakeIcon.remove(e.getPlayer().getUniqueId());gestures.remove(e.getPlayer().getUniqueId());creativeMergeHints.remove(e.getPlayer().getUniqueId());saveState();}
+    @EventHandler public void quit(PlayerQuitEvent e) {bypass(e.getPlayer());removeAttributes(e.getPlayer());fakeIcon.remove(e.getPlayer().getUniqueId());gestures.remove(e.getPlayer().getUniqueId());creativeMergeHints.remove(e.getPlayer().getUniqueId());saveState();if(placeholderCleanup!=null)refreshPlaceholder(e.getPlayer().getUniqueId(),null);}
     @EventHandler public void respawn(PlayerRespawnEvent e) {Bukkit.getScheduler().runTaskLater(this,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},2);}
     @EventHandler public void world(PlayerChangedWorldEvent e) {Bukkit.getScheduler().runTaskLater(this,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},2);}
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void effect(EntityPotionEffectEvent e) {
         if(e.getEntity() instanceof Player p&&e.getModifiedType()==PotionEffectType.LUCK)
-            Bukkit.getScheduler().runTask(this,()->{Core.Active s=active.get(p.getUniqueId());if(p.isOnline()&&s!=null&&!s.expired(System.currentTimeMillis()))updateIcon(p,s);});
+            Bukkit.getScheduler().runTask(this,()->{Core.Active s=active.get(p.getUniqueId());if(p.isOnline()&&s!=null&&(bypass(p)||!s.expired(System.currentTimeMillis())))updateIcon(p,s);});
     }
     private void burst(Player p,int level) {
         UUID id=p.getUniqueId();
@@ -391,8 +425,10 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
             String path="players."+key+".";int id=y.getInt(path+"card"),level=y.getInt(path+"level");
             if(id<1||id>22||level<1||level>5)continue;
             Core.Active s=new Core.Active(id,level,y.getLong(path+"activated"),y.getLong(path+"expires"),y.getLong(path+"unlocks"));
-            if(!s.expired(now)){
+            boolean unlimited=y.getBoolean(path+"bypass",false);
+            if(unlimited||!s.expired(now)){
                 UUID uuid=UUID.fromString(key);active.put(uuid,s);
+                if(unlimited)bypassPlayers.add(uuid);else bypassPlayers.remove(uuid);
                 if(s.locked(now))cooldowns.put(uuid,Math.min(s.expires(),s.unlocks()));
             }
         }catch(IllegalArgumentException ex){getLogger().warning("Ignored invalid player state: "+key);}
@@ -403,13 +439,45 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         }catch(IllegalArgumentException ex){getLogger().warning("Ignored invalid cooldown state: "+key);}
     }
     private void saveState() {
-        YamlConfiguration y=new YamlConfiguration();active.forEach((id,s)->{String p="players."+id+".";y.set(p+"card",s.card());y.set(p+"level",s.level());y.set(p+"activated",s.activated());y.set(p+"expires",s.expires());y.set(p+"unlocks",s.unlocks());});
+        YamlConfiguration y=new YamlConfiguration();active.forEach((id,s)->{String p="players."+id+".";y.set(p+"card",s.card());y.set(p+"level",s.level());y.set(p+"activated",s.activated());y.set(p+"expires",s.expires());y.set(p+"unlocks",s.unlocks());if(bypassPlayers.contains(id))y.set(p+"bypass",true);});
         long now=System.currentTimeMillis();
         cooldowns.forEach((id,deadline)->{if(!active.containsKey(id)&&deadline>now)y.set("cooldowns."+id,deadline);});
         try {File tmp=new File(getDataFolder(),"players.yml.tmp");y.save(tmp);try{Files.move(tmp.toPath(),stateFile.toPath(),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);}catch(java.nio.file.AtomicMoveNotSupportedException ex){Files.move(tmp.toPath(),stateFile.toPath(),StandardCopyOption.REPLACE_EXISTING);}}
         catch(IOException ex){getLogger().severe("Cannot persist tarot activation deadlines: "+ex.getMessage());}
     }
     private long cooldownRemaining(UUID id,long now){return Math.max(0,cooldowns.getOrDefault(id,0L)-now);}
+    private boolean bypass(Player p){
+        boolean enabled=p.hasPermission("tarot.bypass.cd");
+        if(enabled)bypassPlayers.add(p.getUniqueId());else bypassPlayers.remove(p.getUniqueId());
+        return enabled;
+    }
+    private long effectiveCooldown(Player p,long now){return bypass(p)?0:cooldownRemaining(p.getUniqueId(),now);}
+    /** PAPI may call from async scoreboards: only immutable snapshots leave the server thread. */
+    TarotPlaceholderValues.Snapshot placeholderSnapshot(OfflinePlayer player){
+        if(player==null)return TarotPlaceholderValues.Snapshot.empty();
+        UUID id=player.getUniqueId();
+        if(Bukkit.isPrimaryThread()){
+            Player online=player instanceof Player p?p:player.getPlayer();
+            if(online==null&&placeholderCache.containsKey(id))return placeholderCache.get(id);
+            return refreshPlaceholder(id,online);
+        }
+        if(isEnabled()&&!placeholderCache.containsKey(id)&&placeholderPending.add(id))Bukkit.getScheduler().runTask(this,()->{
+            try{refreshPlaceholder(id,Bukkit.getPlayer(id));}finally{placeholderPending.remove(id);}
+        });
+        return placeholderCache.getOrDefault(id,TarotPlaceholderValues.Snapshot.empty());
+    }
+    private TarotPlaceholderValues.Snapshot refreshPlaceholder(UUID id,Player player){
+        Core.Active state=active.get(id);
+        boolean unlimited=player==null?bypassPlayers.contains(id):bypass(player);
+        AlbumService.PlaceholderAlbum collection=albums==null?new AlbumService.PlaceholderAlbum(new BitSet(),false):albums.placeholderAlbum(id);
+        boolean carried=player!=null&&albums!=null&&albums.hasAlbum(player);
+        boolean eligible=player!=null&&!player.isDead()&&player.getGameMode()!=GameMode.SPECTATOR;
+        Card c=state==null?null:card(state.card());
+        TarotPlaceholderValues.Snapshot snapshot=new TarotPlaceholderValues.Snapshot(c==null?0:c.id(),c==null?"":c.name(),
+            state==null?0:state.level(),c==null?"":RARITIES[c.rarity()],state==null?0:state.expires(),
+            cooldowns.getOrDefault(id,0L),unlimited,collection.progress(),carried,collection.particles(),eligible);
+        placeholderCache.put(id,snapshot);return snapshot;
+    }
     private void resetCooldown(Player p){
         cooldowns.remove(p.getUniqueId());
         active.computeIfPresent(p.getUniqueId(),(id,s)->new Core.Active(s.card(),s.level(),s.activated(),s.expires(),0));
@@ -428,9 +496,11 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         TarotCommand.Request request;
         try{request=TarotCommand.parse(args,cardNames());}
         catch(IllegalArgumentException ex){sender.sendMessage(ex.getMessage());return true;}
+        if(!CommandPermissions.allowed(request.kind(),sender::hasPermission)){
+            sender.sendMessage("没有权限，需要 "+CommandPermissions.node(request.kind())+" 或 tarot.admin。");return true;
+        }
         if(request.kind()==TarotCommand.Kind.HELP){help(sender);return true;}
         boolean admin=switch(request.kind()){case GIVE,RESET_CD,RESET_BUFFER,SELFTEST->true;default->false;};
-        if(admin&&!sender.hasPermission("tarot.admin")){sender.sendMessage("没有管理员权限，需要 tarot.admin。");return true;}
         if(request.kind()==TarotCommand.Kind.SELFTEST){selftest();sender.sendMessage("TAROT SELFTEST PASS");return true;}
         if(admin){
             Player target=lookup.apply(request.player());
@@ -475,32 +545,35 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         if(request.item().equals("card")&&target.getGameMode()==GameMode.CREATIVE)creativeMergeHint(target);
     }
     private void status(Player p){
-        long now=System.currentTimeMillis(),remaining=cooldownRemaining(p.getUniqueId(),now);Core.Active s=active.get(p.getUniqueId());
-        if(s==null||s.expired(now)){
+        long now=System.currentTimeMillis(),remaining=effectiveCooldown(p,now);Core.Active s=active.get(p.getUniqueId());
+        boolean unlimited=bypass(p);
+        if(s==null||(!unlimited&&s.expired(now))){
             message(p,"当前没有激活的塔罗牌。"+(remaining>0?"换牌冷却剩余 "+time(remaining):"主手持牌，长按右键 5 秒激活。"));return;
         }
-        message(p,card(s.card()).name+" "+"★".repeat(s.level())+" | 剩余 "+time(s.remaining(now))+" | "+(remaining>0?"换牌锁定 "+time(remaining):"可以更换"));
+        message(p,card(s.card()).name+" "+"★".repeat(s.level())+" | 剩余 "+(unlimited?"永久":time(s.remaining(now)))+" | "+(remaining>0?"换牌锁定 "+time(remaining):"可以更换"));
         for(Bonus b:card(s.card()).bonuses)message(p,b.label+" +"+number(b.amount*SCALE[s.level()-1]*(b.multiply?100:1))+(b.multiply?"%（基础值）":""));
     }
     private void help(CommandSender sender){
         sender.sendMessage("彩虹塔罗 · 指令帮助");
-        sender.sendMessage("/tarot help — 显示帮助；/tarot status — 查看卡牌效果与换牌冷却");
-        sender.sendMessage("/tarot album — 直接打开个人收藏，不发放物品；携带实体册子才有收藏加成");
-        sender.sendMessage("/tarot collection — 查看进度与奖励；/tarot aura — 开关跟随粒子");
-        sender.sendMessage("/tarot migrate — 更新随身旧版物品；主手持牌长按右键 5 秒，松手取消蓄力");
-        sender.sendMessage("卡包／盒／箱仍使用副手持有 + 潜行右键拆开");
+        helpLine(sender,TarotCommand.Kind.HELP,"/tarot help — 显示帮助");
+        helpLine(sender,TarotCommand.Kind.STATUS,"/tarot status — 查看卡牌效果与换牌冷却");
+        helpLine(sender,TarotCommand.Kind.ALBUM,"/tarot album — 打开个人收藏；携带实体册子才有收藏加成");
+        helpLine(sender,TarotCommand.Kind.COLLECTION,"/tarot collection — 查看进度与奖励");
+        helpLine(sender,TarotCommand.Kind.AURA,"/tarot aura — 开关跟随粒子");
+        helpLine(sender,TarotCommand.Kind.MIGRATE,"/tarot migrate — 更新随身旧版物品");
+        sender.sendMessage("主手持牌长按右键 5 秒，松手取消蓄力");
+        sender.sendMessage("卡包／盒／箱：主手持有，直接右键拆开，无需潜行");
         sender.sendMessage("生存／冒险背包：将同名同星的两张 1–4 星卡重叠升级；卡册内 Shift 点击背包卡牌存入，左键取回");
-        if(!sender.hasPermission("tarot.admin"))return;
-        sender.sendMessage("/tarot give <玩家> card <1–22|中文牌名|all> <1–5星> <1–64数量>");
-        sender.sendMessage("/tarot give <玩家> <pack|box|case> <1–64数量>；/tarot give <玩家> album 1");
-        sender.sendMessage("all = 全部 22 种，每种指定数量；整批空间不足会取消，不丢失物品");
-        sender.sendMessage("/tarot reset cd <玩家> — 仅重置换牌冷却，保留效果及到期时间");
-        sender.sendMessage("/tarot reset buffer <玩家> — 仅清除当前塔罗卡牌效果，保留冷却及收藏奖励");
-        sender.sendMessage("示例：/tarot give Steve card all 1 1；/tarot give Steve card 世界 5 1");
-        sender.sendMessage("/tarot selftest — 执行服务端回归检查");
+        helpLine(sender,TarotCommand.Kind.GIVE,"/tarot give <玩家> card <1–22|中文牌名|all> <1–5星> <1–64数量>");
+        helpLine(sender,TarotCommand.Kind.GIVE,"/tarot give <玩家> <pack|box|case> <1–64数量>；/tarot give <玩家> album 1");
+        helpLine(sender,TarotCommand.Kind.GIVE,"all = 全部 22 种，每种指定数量；整批空间不足会取消，不丢失物品");
+        helpLine(sender,TarotCommand.Kind.RESET_CD,"/tarot reset cd <玩家> — 仅重置换牌冷却，保留效果及到期时间");
+        helpLine(sender,TarotCommand.Kind.RESET_BUFFER,"/tarot reset buffer <玩家> — 仅清除当前塔罗卡牌效果，保留冷却及收藏奖励");
+        helpLine(sender,TarotCommand.Kind.SELFTEST,"/tarot selftest — 执行服务端回归检查");
     }
+    private void helpLine(CommandSender sender,TarotCommand.Kind kind,String line){if(CommandPermissions.allowed(kind,sender::hasPermission))sender.sendMessage(line);}
     @Override public List<String> onTabComplete(CommandSender sender,Command cmd,String alias,String[] args) {
-        return TarotCommand.complete(args,cardNames(),Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(),sender.hasPermission("tarot.admin"));
+        return TarotCommand.complete(args,cardNames(),Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(),sender::hasPermission);
     }
     private void selftest() {
         java.util.function.Consumer<Boolean> check=b->{if(!b)throw new IllegalStateException("Tarot inventory test failed");};
@@ -553,9 +626,11 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         AlbumServiceTest.run(this);
         AlbumMenuTest.run(this);
         CommandEventTest.run(this);
+        PackageOpenTest.run(this);
         ChargeControllerTest.run(this);
         ActivationStateTest.run(this);
         ParticleVisualTest.run(this);
+        if(placeholderCleanup!=null)PapiIntegrationTest.run(this);
         getLogger().info("TAROT SELFTEST PASS: full/four/five free slots; stack16+48 and17+48; no mutation on reject;110 cards; legacy and V3.0.0 migration; vanilla paper fallback.");
     }
 }

@@ -3,6 +3,7 @@ package cn.tarot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Predicate;
 
 /** Parses commands before any inventory or persistent-state changes occur. */
 public final class TarotCommand {
@@ -15,10 +16,6 @@ public final class TarotCommand {
     /** For GIVE card, card 0 means all 22 kinds and count applies to each kind. */
     public record Request(Kind kind, String player, String item, int card, int level, int count) {}
 
-    private static final List<String> PLAYER_COMMANDS = List.of(
-        "help", "status", "migrate", "album", "collection", "aura");
-    private static final List<String> ADMIN_COMMANDS = List.of(
-        "help", "status", "migrate", "album", "collection", "aura", "give", "reset", "selftest");
     private static final List<String> ITEMS = List.of("card", "pack", "box", "case", "album");
     private static final String CARD_USAGE =
         "用法：/tarot give <玩家> card <卡牌编号/完整名称/all> <等级1-5> <数量1-64>";
@@ -115,12 +112,19 @@ public final class TarotCommand {
     /** Only offers arguments in their actual positions and filters by the current prefix. */
     public static List<String> complete(String[] args, List<String> cardNames,
                                         List<String> players, boolean admin) {
+        return complete(args, cardNames, players, node -> CommandPermissions.legacyPermission(node, admin));
+    }
+
+    public static List<String> complete(String[] args, List<String> cardNames,
+                                        List<String> players, Predicate<String> permission) {
         checkNames(cardNames);
-        if (args == null || args.length == 0) return admin ? ADMIN_COMMANDS : PLAYER_COMMANDS;
+        List<String> commands = CommandPermissions.COMMANDS.stream()
+            .filter(command -> CommandPermissions.allowed(command, permission)).toList();
+        if (args == null || args.length == 0) return commands;
         for (String arg : args) if (arg == null) return List.of();
         List<String> candidates = List.of();
-        if (args.length == 1) candidates = admin ? ADMIN_COMMANDS : PLAYER_COMMANDS;
-        else if (admin && args[0].equalsIgnoreCase("give")) {
+        if (args.length == 1) candidates = commands;
+        else if (CommandPermissions.allowed(Kind.GIVE, permission) && args[0].equalsIgnoreCase("give")) {
             if (args.length == 2) candidates = players;
             else if (args.length == 3) candidates = ITEMS;
             else if (args[2].equalsIgnoreCase("card")) {
@@ -136,10 +140,12 @@ public final class TarotCommand {
                 candidates = args[2].equalsIgnoreCase("album") ? List.of("1")
                     : List.of("1", "8", "16", "32", "48", "64");
             }
-        } else if (admin && args[0].equalsIgnoreCase("reset")) {
-            if (args.length == 2) candidates = List.of("cd", "buffer");
-            else if (args.length == 3 && (args[1].equalsIgnoreCase("cd")
-                    || args[1].equalsIgnoreCase("buffer"))) candidates = players;
+        } else if (args[0].equalsIgnoreCase("reset")) {
+            List<String> resets = new ArrayList<>();
+            if (CommandPermissions.allowed(Kind.RESET_CD, permission)) resets.add("cd");
+            if (CommandPermissions.allowed(Kind.RESET_BUFFER, permission)) resets.add("buffer");
+            if (args.length == 2) candidates = resets;
+            else if (args.length == 3 && resets.contains(lower(args[1]))) candidates = players;
         }
         String prefix = lower(args[args.length - 1]);
         return candidates.stream().filter(s -> lower(s).startsWith(prefix)).distinct().toList();

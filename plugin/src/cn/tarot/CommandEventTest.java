@@ -16,12 +16,14 @@ final class CommandEventTest {
     static void run(TarotPlugin plugin){
         checks=0;
         Map<UUID,Core.Active> active=null,oldActive=null;Map<UUID,Long> locks=null,oldLocks=null;
+        Set<UUID> bypassPlayers=null,oldBypassPlayers=null;
         File previous=null,temp=null;
         try{
             Field state=field("stateFile");previous=(File)state.get(plugin);
             temp=Files.createTempFile(plugin.getDataFolder().toPath(),"command-test-",".yml").toFile();state.set(plugin,temp);
             active=(Map<UUID,Core.Active>)field("active").get(plugin);oldActive=new HashMap<>(active);
             locks=(Map<UUID,Long>)field("cooldowns").get(plugin);oldLocks=new HashMap<>(locks);
+            bypassPlayers=(Set<UUID>)field("bypassPlayers").get(plugin);oldBypassPlayers=new HashSet<>(bypassPlayers);
             Fixture f=new Fixture();
             command(plugin,f,"give Tester card all 3 1");
             check(items(f)==22,"all gives 22 cards");
@@ -40,7 +42,26 @@ final class CommandEventTest {
             check(Arrays.equals(before,f.storage.getContents()),"invalid and retired commands cannot mutate inventory");
             f.admin=false;command(plugin,f,"give Tester card all 1 1");check(Arrays.equals(before,f.storage.getContents()),"permission guard");
             f.messages.clear();command(plugin,f,"help");check(f.messages.stream().noneMatch(s->s.contains("/tarot give")),"player help hides admin commands");
+            f.grants.add("tarot.command.give");
+            f.storage.clear();command(plugin,f,"give Tester card 世界 2 1");
+            check(items(f)==1&&plugin.cardId(f.storage.getItem(0))==22,"give grant works without tarot.admin");
+            f.messages.clear();command(plugin,f,"help");
+            check(f.messages.stream().anyMatch(s->s.contains("/tarot give"))
+                &&f.messages.stream().noneMatch(s->s.contains("/tarot reset")),"help exposes only individually permitted management commands");
+            List<String> completions=plugin.onTabComplete(f.player,null,"tarot",new String[]{""});
+            check(completions.contains("give")&&!completions.contains("reset")&&!completions.contains("selftest"),"root tab completion follows individual give permission");
+            f.grants.clear();
+            check(plugin.onTabComplete(f.player,null,"tarot",new String[]{"give","Tester",""}).isEmpty(),"revoking give permission hides its argument completions");
+            f.denials.add("tarot.command.status");
+            f.messages.clear();command(plugin,f,"status");
+            check(f.messages.stream().anyMatch(s->s.contains("没有权限")&&s.contains("tarot.command.status"))
+                &&f.messages.stream().noneMatch(s->s.contains("当前没有激活")),"explicit status denial prevents command execution");
+            f.messages.clear();command(plugin,f,"help");
+            check(f.messages.stream().noneMatch(s->s.contains("/tarot status")),"help hides a denied public command");
+            check(!plugin.onTabComplete(f.player,null,"tarot",new String[]{""}).contains("status"),"tab completion hides a denied public command");
+            f.denials.clear();
             f.admin=true;f.messages.clear();command(plugin,f,"help");check(f.messages.stream().anyMatch(s->s.contains("reset buffer")),"admin help new syntax");
+            before=f.storage.getContents();
             plugin.executeCommand(f.player,new String[]{"give","Missing","card","all","1","1"},name->null);
             check(Arrays.equals(before,f.storage.getContents()),"offline target gives nothing");
 
@@ -51,11 +72,20 @@ final class CommandEventTest {
             AttributeModifier album=new AttributeModifier(new NamespacedKey("tarot_album","max_health"),2,AttributeModifier.Operation.ADD_NUMBER);
             AttributeModifier other=new AttributeModifier(new NamespacedKey("other_plugin","health"),1,AttributeModifier.Operation.ADD_NUMBER);
             f.modifiers.addAll(List.of(own,album,other));
-            f.admin=false;command(plugin,f,"reset buffer Tester");check(active.get(f.uuid).equals(original)&&locks.get(f.uuid)==unlock,"reset permission guard");f.admin=true;
+            f.admin=false;command(plugin,f,"reset buffer Tester");check(active.get(f.uuid).equals(original)&&locks.get(f.uuid)==unlock,"reset permission guard");
+            f.grants.add("tarot.command.reset.cd");
+            command(plugin,f,"reset buffer Tester");
+            check(active.get(f.uuid).equals(original)&&locks.get(f.uuid)==unlock&&f.modifiers.size()==3,"reset cd grant does not allow reset buffer");
+            f.messages.clear();command(plugin,f,"help");
+            check(f.messages.stream().anyMatch(s->s.contains("/tarot reset cd"))
+                &&f.messages.stream().noneMatch(s->s.contains("/tarot reset buffer")),"help distinguishes reset cd and reset buffer permissions");
+            check(plugin.onTabComplete(f.player,null,"tarot",new String[]{"reset",""}).equals(List.of("cd")),"reset argument completion only offers authorized operation");
+            check(plugin.onTabComplete(f.player,null,"tarot",new String[]{"reset","buffer",""}).isEmpty(),"unauthorized reset buffer offers no target completion");
             command(plugin,f,"reset cd Tester");
             Core.Active reset=active.get(f.uuid);
             check(!locks.containsKey(f.uuid)&&reset.unlocks()==0&&reset.expires()==original.expires()&&reset.activated()==now&&reset.card()==4&&reset.level()==3,"reset cd only unlocks");
             check(f.modifiers.size()==3,"reset cd preserves attributes");
+            f.grants.clear();f.admin=true;
             // Reconstruct saved state to detect a reset that was only held in memory.
             active.clear();locks.clear();invoke(plugin,"loadState");
             check(active.get(f.uuid).equals(reset)&&!locks.containsKey(f.uuid),"reset cd survives load");
@@ -73,6 +103,7 @@ final class CommandEventTest {
         finally{
             if(active!=null&&oldActive!=null){active.clear();active.putAll(oldActive);}
             if(locks!=null&&oldLocks!=null){locks.clear();locks.putAll(oldLocks);}
+            if(bypassPlayers!=null&&oldBypassPlayers!=null){bypassPlayers.clear();bypassPlayers.addAll(oldBypassPlayers);}
             try{if(previous!=null)field("stateFile").set(plugin,previous);if(temp!=null)Files.deleteIfExists(temp.toPath());}
             catch(Exception ex){throw new IllegalStateException("Command test cleanup failed",ex);}
         }
@@ -87,7 +118,12 @@ final class CommandEventTest {
     private static final class Fixture{
         final UUID uuid=UUID.randomUUID();final Inventory storage=Bukkit.createInventory(null,36);
         final List<String> messages=new ArrayList<>();final List<AttributeModifier> modifiers=new ArrayList<>();
+        final Set<String> grants=new HashSet<>(),denials=new HashSet<>();
         boolean admin=true;double health=20;
+        boolean permission(String node){
+            if(denials.contains(node)||node.equals(CommandPermissions.BYPASS_CD))return false;
+            return grants.contains(node)||CommandPermissions.legacyPermission(node,admin);
+        }
         final AttributeInstance maxHealth=proxy(AttributeInstance.class,(o,m,a)->switch(m.getName()){
             case "getModifiers"->List.copyOf(modifiers);case "removeModifier"->{modifiers.remove(a[0]);yield null;}
             case "getValue"->20+modifiers.stream().mapToDouble(AttributeModifier::getAmount).sum();
@@ -100,7 +136,7 @@ final class CommandEventTest {
         });
         final Player player=proxy(Player.class,(o,m,a)->switch(m.getName()){
             case "getInventory"->inventory;case "getUniqueId"->uuid;case "getName"->"Tester";
-            case "hasPermission"->admin;case "getGameMode"->GameMode.SURVIVAL;case "isDead"->false;
+            case "hasPermission"->permission((String)a[0]);case "getGameMode"->GameMode.SURVIVAL;case "isDead"->false;
             case "sendMessage"->{messages.add(Arrays.toString(a));yield null;}
             case "getAttribute"->a[0]==Attribute.MAX_HEALTH?maxHealth:null;
             case "getHealth"->health;case "setHealth"->{health=(Double)a[0];yield null;}

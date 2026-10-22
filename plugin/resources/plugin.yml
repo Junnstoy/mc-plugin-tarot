@@ -1,13 +1,51 @@
 name: TarotRainbow
-version: 3.3.1
+version: 3.4.0
 main: cn.tarot.TarotPlugin
 api-version: '26.3'
 description: Rainbow tarot cards, timed equipment effects, and collectible packs
 author: Yuma
+softdepend: [PlaceholderAPI]
 commands:
   tarot:
     description: 塔罗卡牌、个人收藏与效果管理
     usage: /tarot help
 permissions:
   tarot.admin:
+    description: 授予所有塔罗命令权限，不包含时间与冷却绕过
     default: op
+  tarot.command.help:
+    description: 查看有权限使用的塔罗指令
+    default: true
+  tarot.command.status:
+    description: 查看当前塔罗效果和换卡冷却
+    default: true
+  tarot.command.migrate:
+    description: 更新背包中的旧版塔罗物品
+    default: true
+  tarot.command.album:
+    description: 打开个人塔罗收集册
+    default: true
+  tarot.command.collection:
+    description: 查看个人塔罗收藏进度
+    default: true
+  tarot.command.aura:
+    description: 切换个人收集册粒子特效
+    default: true
+  tarot.command.give:
+    description: 发放塔罗卡牌、卡包、卡盒、整箱和收集册
+    default: false
+  tarot.command.reset:
+    description: 重置玩家换卡冷却或塔罗效果
+    default: false
+  tarot.command.reset.cd:
+    description: 仅重置玩家的换卡冷却
+    default: false
+  tarot.command.reset.buffer:
+    description: 仅移除玩家的塔罗效果
+    default: false
+  tarot.command.selftest:
+    description: 运行塔罗插件诊断测试
+    default: false
+  tarot.bypass.cd:
+    description: 拥有权限期间卡牌效果永久、换卡无冷却；需单独授予
+    default: false

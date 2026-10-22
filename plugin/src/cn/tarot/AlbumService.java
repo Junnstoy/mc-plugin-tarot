@@ -157,6 +157,16 @@ final class AlbumService implements Listener {
         AlbumStore.Data d=profile(p);BitSet bits=new BitSet(110);
         if(d!=null)for(int i=0;i<110;i++)if(d.cards[i]!=null)bits.set(i);return bits;
     }
+    record PlaceholderAlbum(BitSet progress,boolean particles){}
+    /** Read-only snapshot: offline lookup never grants an album or writes its data. */
+    PlaceholderAlbum placeholderAlbum(UUID id){
+        AlbumStore.Data data=profiles.get(id);boolean validated=data!=null;BitSet bits=new BitSet(110);
+        try{
+            if(data==null)data=store.load(id);
+            for(int i=0;i<110;i++)if(data.cards[i]!=null&&(validated||cardIndex(data.cards[i])==i))bits.set(i);
+            return new PlaceholderAlbum(bits,data.particles);
+        }catch(IOException ex){plugin.getLogger().warning("Cannot read album placeholders for "+id+": "+ex.getMessage());return new PlaceholderAlbum(new BitSet(),false);}
+    }
     private int cardIndex(ItemStack item){
         ItemStack card=plugin.migrateItem(item);int id=plugin.cardId(card);
         return id==0?-1:AlbumRules.index(id,plugin.cardLevel(card));

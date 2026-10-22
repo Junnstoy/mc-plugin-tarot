@@ -2,6 +2,7 @@ package cn.tarot;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public final class TarotCommandTest {
     private static final List<String> NAMES = List.of("愚者", "魔术师", "女祭司", "女皇", "皇帝", "教皇",
@@ -25,6 +26,9 @@ public final class TarotCommandTest {
     }
     private static List<String> complete(boolean admin, String... args) {
         return TarotCommand.complete(args, NAMES, List.of("Alice", "Bob"), admin);
+    }
+    private static List<String> permitted(Set<String> grants, String... args) {
+        return TarotCommand.complete(args, NAMES, List.of("Alice", "Bob"), grants::contains);
     }
 
     public static void main(String[] ignored) {
@@ -103,6 +107,21 @@ public final class TarotCommandTest {
         check(complete(true, "help", "").isEmpty());
         check(complete(false, "give", "").isEmpty());
         check(complete(true, "give", "Alice", "card", "1", "1", "1", "").isEmpty());
+        check(permitted(Set.of(), "").isEmpty());
+        check(permitted(Set.of("tarot.command.album"), "").equals(List.of("album")));
+        check(permitted(Set.of("tarot.command.give"), "").equals(List.of("give")));
+        check(permitted(Set.of("tarot.command.give"), "give", "").equals(List.of("Alice", "Bob")));
+        check(permitted(Set.of("tarot.command.status"), "give", "").isEmpty());
+        check(permitted(Set.of("tarot.command.reset.cd"), "").equals(List.of("reset")));
+        check(permitted(Set.of("tarot.command.reset.cd"), "reset", "").equals(List.of("cd")));
+        check(permitted(Set.of("tarot.command.reset.cd"), "reset", "cd", "").equals(List.of("Alice", "Bob")));
+        check(permitted(Set.of("tarot.command.reset.cd"), "reset", "buffer", "").isEmpty());
+        check(permitted(Set.of("tarot.command.reset.buffer"), "reset", "").equals(List.of("buffer")));
+        check(permitted(Set.of("tarot.command.reset.buffer"), "reset", "cd", "").isEmpty());
+        check(permitted(Set.of("tarot.command.reset"), "reset", "").equals(List.of("cd", "buffer")));
+        check(permitted(Set.of("tarot.admin"), "").equals(complete(true, "")));
+        check(permitted(Set.of("tarot.bypass.cd"), "").isEmpty());
+        check(permitted(Set.of("tarot.command.reset.cd"), "RESET", "CD", "a").equals(List.of("Alice")));
         Locale previous = Locale.getDefault();
         try {
             Locale.setDefault(Locale.forLanguageTag("tr-TR"));

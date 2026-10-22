@@ -2423,5 +2423,56 @@
         }
       }
     ]
+  },
+  {
+    "tag": "v3.4.0",
+    "description": "右键拆包、命令权限、时间绕过与 PAPI",
+    "sources": [
+      {
+        "archive": "TarotRainbow-3.4.0-source.zip",
+        "archive_sha256": "2012442e9eb0e014630ec003854cef1e8d3b8c2b7e7cbe1c48360b075c373a3e",
+        "target": "plugin",
+        "files": {
+          "src/cn/tarot/ActivationStateTest.java": "a680ec2f47cd096e645a8764a1cd014c4c17eed60a3703ed9c44e3abfa3bf0ed",
+          "src/cn/tarot/AlbumAura.java": "f92f4a6d3e7c2cb237d5b043f7171685c40eeb3ef8dbb4c9644a0792a3bee89a",
+          "src/cn/tarot/AlbumAuraTest.java": "80ac3f36e55fbeea1defa42744c7382a3339913ac04b7cb3761aa34a00afc975",
+          "src/cn/tarot/AlbumMenu.java": "6d0589cf1b6b78c28d4726dad019a729537da69c8f45bd87d32cb01e20e97caa",
+          "src/cn/tarot/AlbumMenuTest.java": "50fc955b25528b967f982eb9396c6609193cc031e9645f6e84e2f7a7ea85aa8f",
+          "src/cn/tarot/AlbumRules.java": "d54e451cf12ef1de253891e3155b9b1441074529fcaab7be0c964f276d95ebdb",
+          "src/cn/tarot/AlbumRulesTest.java": "67e43a5fc5c2c6074cb2a8ee447b86df97aa18b76917b0d0ea2a730428bbb0cb",
+          "src/cn/tarot/AlbumService.java": "14a42674bc26f3e5a74e6e0f311ba87fb1693ed7c39d01625e6ad0b76d7ad7cb",
+          "src/cn/tarot/AlbumServiceTest.java": "8e27f60946e5168f57263c432e2213e3b373d8cf390b85de1e00bd7465496f26",
+          "src/cn/tarot/AlbumStore.java": "025708f96c8cb2f4b47556656ebcc36e3da579902e58fec09259a85838fd4675",
+          "src/cn/tarot/CardParticleArt.java": "98269928e0cf6d7b618615acf84c931f85808b9e8b4c8d8ec53dc1211fbe1674",
+          "src/cn/tarot/ChargeController.java": "1f09a1dce5946aa158d1b3df5f42db52633c7baccb97c670a3a402bf546ed45c",
+          "src/cn/tarot/ChargeControllerTest.java": "61c3a93e4499b9d1ffd57b68a6f196d593ca10bf220b645c14186f34d9e261eb",
+          "src/cn/tarot/CommandEventTest.java": "e63a3814fa5c0ccd9d848ef35331117cd201b02fe4a330531eb92be5a876a23b",
+          "src/cn/tarot/CommandPermissions.java": "c97f85b4c3fb8b4b1db7a7f4b5736474e68a38d4907c82b57bc37ee4512a9801",
+          "src/cn/tarot/CommandPermissionsTest.java": "a5328f6ea13bd2152fecce77636769463a56542d37297e021f946525b5e852bb",
+          "src/cn/tarot/Core.java": "277be9eb5bf12962afd968210800892bfc00f027298fc5b32db2940f0607f9e0",
+          "src/cn/tarot/CoreTest.java": "f7ecbadb187dff1e994bbbb45ff05bb74f20f706edcab9f4af4508ddbb8b0769",
+          "src/cn/tarot/InventoryPlan.java": "ba77de88a25ad2097e1a0395ffcfd6c806ac523fcc5532c7fe1fa3ac787d8d1e",
+          "src/cn/tarot/PackageOpenTest.java": "737e71bcecb54fb698f6e1a1a61406b300cd239527a671790c3ab5f731bd9ca8",
+          "src/cn/tarot/PapiIntegrationTest.java": "b8d2fe6af63fefd34279feebea4fe000b69478b2d990fa3bf5c7c53a978b4c0f",
+          "src/cn/tarot/ParticleLines.java": "4bbba0f53adc3f6caf745b504779c99cfa4a59c9971442f5092c407db3277df0",
+          "src/cn/tarot/ParticleVisualTest.java": "779edc21105ea8fd342ab7944080f7bccff77951ae17bd24892668475c37693e",
+          "src/cn/tarot/TarotCast.java": "1c99e3f2abdbc6ba8f016ea18a62b2df0962545d092c2c5d8be82daa6621114b",
+          "src/cn/tarot/TarotCastTest.java": "5d05ecfcd1bd86d94756b058531dd602f604f0bccd2c81c727927848e1ef6fab",
+          "src/cn/tarot/TarotCommand.java": "29d6c60c1ff306c319efb774e7b47330301ed02ce681bfb53f315662d237f8e6",
+          "src/cn/tarot/TarotCommandTest.java": "52f1aec0ce9f1edec3ebcbc0ce00ddcb845fc713fb8a3ff8f43b357cff207b9b",
+          "src/cn/tarot/TarotPlaceholders.java": "e33c713eb5fe1d61c24a22b779e70341c8da89204ee30bd293c7a87ab7c9727e",
+          "src/cn/tarot/TarotPlaceholderValues.java": "810345dbaf67667bb34c58ec3da001e076767935b7a06ef9f3f05c24cd161428",
+          "src/cn/tarot/TarotPlaceholderValuesTest.java": "755250f069d31c9d1ead2028ecf4840809b1b43823e543dc22c7007051652e36",
+          "src/cn/tarot/TarotPlugin.java": "dce58deeff8ad8f9a7ba37c9025fd67f6bff926f5251dab9ce97659111384118",
+          "src/cn/tarot/UpgradeEventTest.java": "f9a703fa3eb9f15a6c63cc98543377ac72b6cb73447ff2646259a4cb58a26b6a",
+          "resources/card-particles.csv": "9f86e837f304c89da25da39364421b4b7f5880a0d1a209e7a82a2bd6db6c6a69",
+          "resources/config.yml": "735e1b43f09c5668c03f4af868cb7417f7a3c83009fbf1a62384236f12633ff2",
+          "resources/plugin.yml": "24c18c12b7b941162eca553cd35279bfcd3d7147a229a69e966008c09272a4d3",
+          "build.ps1": "7726acd9186f391dc2d272f656e90bf49bd0237292aea9c3633429a125730e0a",
+          "README.md": "0a0827dfa1c4b2bfc3344af6498fec670df613cd0276a926d0ab551d9c35a953",
+          "PAPI-placeholders.md": "cbd17f8f47153c3041b513199fc24753e7561be10ae5098aa5587d683977ba2f"
+        }
+      }
+    ]
   }
 ]

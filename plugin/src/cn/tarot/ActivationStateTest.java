@@ -24,7 +24,7 @@ final class ActivationStateTest {
         checks = 0;
         Map<UUID, Core.Active> active = null, savedActive = null;
         Map<UUID, Long> cooldowns = null, savedCooldowns = null, gestures = null, savedGestures = null;
-        Set<UUID> icons = null, savedIcons = null;
+        Set<UUID> icons = null, savedIcons = null, bypassPlayers = null, savedBypassPlayers = null;
         File originalFile = null, temporaryFile = null;
         long originalDuration = 0, originalLock = 0;
         boolean originalIcon = false, settingsSaved = false;
@@ -37,6 +37,7 @@ final class ActivationStateTest {
             cooldowns = (Map<UUID, Long>) field("cooldowns").get(plugin); savedCooldowns = new HashMap<>(cooldowns);
             gestures = (Map<UUID, Long>) field("gestures").get(plugin); savedGestures = new HashMap<>(gestures);
             icons = (Set<UUID>) field("fakeIcon").get(plugin); savedIcons = new HashSet<>(icons);
+            bypassPlayers = (Set<UUID>) field("bypassPlayers").get(plugin); savedBypassPlayers = new HashSet<>(bypassPlayers);
             originalDuration = field("durationMillis").getLong(plugin);
             originalLock = field("lockMillis").getLong(plugin);
             originalIcon = field("iconEnabled").getBoolean(plugin); settingsSaved = true;
@@ -150,8 +151,51 @@ final class ActivationStateTest {
             check(!active.containsKey(f.uuid) && canCharge(plugin, f), "24-hour expiry removes effect and allows a fresh activation on rejoin");
             near(f.attribute(Attribute.MAX_HEALTH).getValue(), 23, "expired effect restores external-only health");
             check(!icons.contains(f.uuid), "expired effect removes the countdown icon");
+
+            // The bypass is independent of admin privileges and changes effective time, not stored deadlines.
+            f.main = plugin.makeCard(4, 2); holdAndFinish(controller, f);
+            Core.Active ordinaryDeadline = active.get(f.uuid);
+            check(!canCharge(plugin, f), "admin alone still obeys the card cooldown");
+            f.bypass = true;
+            check(canCharge(plugin, f) && bypassPlayers.contains(f.uuid), "explicit bypass permission ignores a running lock");
+            invoke(plugin, "restore", new Class<?>[]{Player.class}, f.player);
+            check(ordinaryDeadline.equals(active.get(f.uuid)), "granting bypass preserves the original real-time deadlines");
+            check(f.lastIcon != null && f.lastIcon.getDuration() == -1, "bypass uses an infinite vanilla status duration");
+            f.bypass = false;
+            invoke(plugin, "restore", new Class<?>[]{Player.class}, f.player);
+            check(ordinaryDeadline.equals(active.get(f.uuid)) && !canCharge(plugin, f), "revoking bypass restores an unexpired effect's original deadline and lock");
+            check(f.lastIcon != null && f.lastIcon.getDuration() > 0, "revoking bypass restores a finite status countdown");
+
+            f.bypass = true;
+            f.main = plugin.makeCard(21, 5); holdAndFinish(controller, f);
+            check(active.get(f.uuid).card() == 21 && canCharge(plugin, f), "bypass can finish another card immediately while normal cooldown is running");
+            check(f.lastIcon != null && f.lastIcon.getDuration() == -1, "bypass activation immediately sends the infinite icon");
+            long expiredAt = System.currentTimeMillis() - 86_400_001L;
+            Core.Active expiredBypass = new Core.Active(21, 5, expiredAt, expiredAt + 86_400_000L, expiredAt + 1_800_000L);
+            active.put(f.uuid, expiredBypass); cooldowns.put(f.uuid, expiredBypass.unlocks());
+            invoke(plugin, "restore", new Class<?>[]{Player.class}, f.player);
+            check(expiredBypass.equals(active.get(f.uuid)) && canCharge(plugin, f), "bypass restores an effect past its ordinary expiration");
+            near(f.attribute(Attribute.ARMOR).getValue(), 6 + 6 * 2.1, "expired bypass effect retains its real attribute bonus");
+            check(f.lastIcon != null && f.lastIcon.getDuration() == -1, "expired bypass effect still has an infinite icon");
+            invoke(plugin, "saveState", new Class<?>[]{});
+            persisted = YamlConfiguration.loadConfiguration(temporaryFile);
+            check(persisted.getBoolean("players." + f.uuid + ".bypass"), "persistence records bypass for offline expiration handling");
+            bypassPlayers.clear();
+            reload(plugin, active, cooldowns);
+            check(expiredBypass.equals(active.get(f.uuid)) && bypassPlayers.contains(f.uuid), "restart restores an expired bypass effect and its cached permission state");
+            f.bypass = false;
+            invoke(plugin, "restore", new Class<?>[]{Player.class}, f.player);
+            check(!active.containsKey(f.uuid) && !bypassPlayers.contains(f.uuid), "rejoin checks actual permission and removes expired effect after bypass is revoked");
+            near(f.attribute(Attribute.ARMOR).getValue(), 6, "bypass revocation removes expired card attributes");
+            check(!icons.contains(f.uuid), "bypass revocation removes expired effect icon");
+
+            f.bypass = true;
+            f.main = plugin.makeCard(4, 1); holdAndFinish(controller, f);
+            reset(plugin, f, "buffer");
+            check(!active.containsKey(f.uuid) && !icons.contains(f.uuid) && canCharge(plugin, f), "reset buffer explicitly clears even a bypass effect without preventing a new charge");
+            near(f.attribute(Attribute.MAX_HEALTH).getValue(), 23, "reset buffer removes bypass card attributes and retains external bonuses");
             plugin.getLogger().info("TAROT ACTIVATION STATE SELFTEST PASS: " + checks
-                + " checks; main-hand native completion, immediate 30-minute cooldown, 24-hour effect, unlocked switching, real Paper attributes, reset independence and persistence.");
+                + " checks; main-hand native completion, cooldowns, switching, real Paper attributes, reset independence, bypass grant/revoke and persistence.");
         } catch (Exception ex) {
             throw new IllegalStateException("Activation state integration selftest failed", ex);
         } finally {
@@ -161,6 +205,7 @@ final class ActivationStateTest {
             if (cooldowns != null && savedCooldowns != null) { cooldowns.clear(); cooldowns.putAll(savedCooldowns); }
             if (gestures != null && savedGestures != null) { gestures.clear(); gestures.putAll(savedGestures); }
             if (icons != null && savedIcons != null) { icons.clear(); icons.addAll(savedIcons); }
+            if (bypassPlayers != null && savedBypassPlayers != null) { bypassPlayers.clear(); bypassPlayers.addAll(savedBypassPlayers); }
             try {
                 if (originalFile != null) field("stateFile").set(plugin, originalFile);
                 if (settingsSaved) {
@@ -225,7 +270,7 @@ final class ActivationStateTest {
         // Bukkit creates a real CraftZombie and its attribute map, but does not spawn it or run entity ticks.
         final Zombie attributes = world.createEntity(new Location(world, 0, 80, 0), Zombie.class);
         ItemStack main, off, usingItem;
-        boolean using;
+        boolean using, bypass;
         int used, removedIcons;
         PotionEffect lastIcon;
         final List<Component> actionBars = new ArrayList<>();
@@ -235,7 +280,9 @@ final class ActivationStateTest {
         });
         final Player player = proxy(Player.class, (o, m, a) -> switch (m.getName()) {
             case "getUniqueId" -> uuid; case "getName" -> "ActivationTest"; case "getInventory" -> inventory;
-            case "isOnline", "isInvisible", "hasPermission" -> true; case "isDead", "isSneaking" -> false;
+            case "isOnline", "isInvisible" -> true; case "isDead", "isSneaking" -> false;
+            case "hasPermission" -> a[0].equals(CommandPermissions.ADMIN)
+                || (a[0].equals(CommandPermissions.BYPASS_CD) && bypass);
             case "getGameMode" -> GameMode.SURVIVAL; case "getAttribute" -> attributes.getAttribute((Attribute) a[0]);
             case "getHealth" -> attributes.getHealth(); case "setHealth" -> { attributes.setHealth((Double) a[0]); yield null; }
             case "getLocation" -> attributes.getLocation(); case "getWorld" -> world;
