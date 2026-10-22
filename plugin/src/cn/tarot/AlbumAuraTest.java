@@ -22,20 +22,23 @@ public final class AlbumAuraTest {
         invalid(() -> new AlbumAura.State(0));
         invalid(() -> new AlbumAura.State(7));
         invalid(() -> new AlbumAura.State(1).step(-1, false));
+        check(AlbumAura.SWEEP_TICKS == 36, "faster 1.8-second sweep");
+        check(AlbumAura.DRAIN_TICKS == 12, "tail clears in 0.6 seconds");
         check(AlbumAura.PAUSE_TICKS == 20, "one second pause");
         close(AlbumAura.MAX_ARC, Math.PI * 1.5, "three-quarter circle cap");
         AlbumAura.State arc = new AlbumAura.State(1);
         check(arc.frame().points().isEmpty(), "cycle starts empty");
-        var fullArc = arc.step(45, false);
+        int threeQuarterSweep = AlbumAura.SWEEP_TICKS * 3 / 4;
+        var fullArc = arc.step(threeQuarterSweep, false);
         var first = fullArc.points().getFirst();
         var last = fullArc.points().getLast();
         double from = Math.atan2(first.back(), first.right());
         double to = Math.atan2(last.back(), last.right());
         close((to - from + Math.PI * 2) % (Math.PI * 2), AlbumAura.MAX_ARC, "drawn arc is exactly 75 percent");
         int fullCount = fullArc.points().size();
-        check(arc.step(15, false).points().size() == fullCount, "length capped through complete sweep");
-        check(arc.step(10, false).points().size() < fullCount, "tail drains smoothly");
-        check(arc.step(10, false).points().isEmpty(), "pause begins only after tail is gone");
+        check(arc.step(AlbumAura.SWEEP_TICKS - threeQuarterSweep, false).points().size() == fullCount, "length capped through complete sweep");
+        check(arc.step(AlbumAura.DRAIN_TICKS / 2, false).points().size() < fullCount, "tail drains smoothly");
+        check(arc.step(AlbumAura.DRAIN_TICKS / 2, false).points().isEmpty(), "pause begins only after tail is gone");
         check(arc.step(19, false).points().isEmpty(), "pause lasts full second");
         check(arc.step(1, false).cycleTick() == 0, "next boundary");
         check(!arc.step(1, false).points().isEmpty(), "next sweep starts");
@@ -47,16 +50,17 @@ public final class AlbumAuraTest {
             check(frame.colorIndex() == i, "rainbow color order");
             check(frame.points().stream().map(AlbumAura.Point::color).distinct().count() == 1, "one color per circle");
             colors.add(frame.points().getFirst().color());
-            rainbow.step(98, true);
+            rainbow.step(AlbumAura.CYCLE_TICKS - 2, true);
         }
         check(colors.size() == 7, "all seven colors");
         check(rainbow.frame().colorIndex() == 0, "red repeats after violet");
         check(!rainbow.frame().idle(), "walking never becomes idle");
         check(rainbow.step(30, true).cycleTick() == 30, "walking advances circle");
         check(rainbow.step(2, true).cycleTick() == 32, "continuous motion does not reset phase");
-        rainbow.step(68, false);
+        rainbow.step(AlbumAura.CYCLE_TICKS - 32, false);
         check(rainbow.frame().completedStillCycles() == 0, "partial stationary cycle not counted");
-        check(!rainbow.step(699, false).idle(), "seven full circles required after partial circle");
+        int idleStart = AlbumAura.IDLE_CYCLES * AlbumAura.CYCLE_TICKS;
+        check(!rainbow.step(idleStart - 1, false).idle(), "seven full circles required after partial circle");
         check(rainbow.step(1, false).idle(), "seventh complete circle triggers wings");
         close(rainbow.frame().unfold(), 0, "wings begin folded");
         close(rainbow.step(20, false).unfold(), .5, "wings smoothly spread");
@@ -69,7 +73,7 @@ public final class AlbumAuraTest {
         for (int tier = 1; tier <= 6; tier++) {
             AlbumAura.State state = new AlbumAura.State(tier);
             check(state.tier() == tier, "tier retained");
-            check(!state.step(699, false).idle(), "tier does not become idle early");
+            check(!state.step(idleStart - 1, false).idle(), "tier does not become idle early");
             var transition = state.step(1, false);
             check(transition.idle() && transition.completedStillCycles() == 7, "every tier has seven-cycle idle trigger");
             var unfolded = state.step(40, false);
@@ -87,17 +91,21 @@ public final class AlbumAuraTest {
             for (int tick = 0; tick < 1000; tick += 2) {
                 var frame = state.step(2, false);
                 check(frame.points().size() <= AlbumAura.MAX_POINTS, "bounded per-frame particle count");
-                if (!frame.idle()) check(frame.points().size() <= 60, "small normal circle budget");
+                if (!frame.idle()) check(frame.points().size() <= 17, "sparse normal circle budget");
                 for (var point : frame.points()) {
                     check(Double.isFinite(point.right()) && Double.isFinite(point.up()) && Double.isFinite(point.back()), "finite geometry");
                     check(point.size() > 0 && point.size() <= 1, "restrained particle size");
-                    if (!frame.idle()) close(point.up(), AlbumAura.CIRCLE_HEIGHT, "normal animation is above head");
+                    if (!frame.idle()) {
+                        close(point.up(), AlbumAura.CIRCLE_HEIGHT, "normal animation is above head");
+                        check(Math.hypot(point.right(), point.back()) <= .49, "head circle stays below half-block radius");
+                    }
                 }
             }
         }
         AlbumAura.State coarse = new AlbumAura.State(5), fine = new AlbumAura.State(5);
-        coarse.step(740, false);
-        for (int i = 0; i < 370; i++) fine.step(2, false);
+        int fullyUnfoldedAt = idleStart + AlbumAura.UNFOLD_TICKS;
+        coarse.step(fullyUnfoldedAt, false);
+        for (int i = 0; i < fullyUnfoldedAt / 2; i++) fine.step(2, false);
         check(coarse.frame().equals(fine.frame()), "batch advancement matches two-tick updates");
         var immutable = fine.frame();
         try { immutable.points().clear(); throw new AssertionError("mutable frame"); }

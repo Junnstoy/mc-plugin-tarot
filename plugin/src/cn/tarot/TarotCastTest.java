@@ -39,6 +39,7 @@ public final class TarotCastTest {
             previous = full.size();
             check(radius(TarotCast.frame(level, .1, art)) < radius(TarotCast.frame(level, .3, art)), "ground circle expands");
             check(Math.abs(radius(TarotCast.frame(level, .45, art)) - radius(full)) < 1e-9, "ground finished growing before midpoint");
+            check(radius(full) <= .73, "smaller magic circle stays within 0.73-block radius");
             if (level < 5) check(full.stream().noneMatch(art::contains), "card image restricted to five stars");
             if (level < 4) check(full.stream().allMatch(p -> p.up() == TarotCast.GROUND_HEIGHT), "lower levels stay on ground");
             if (level >= 4) {
@@ -54,6 +55,10 @@ public final class TarotCastTest {
                 }
             }
         }
+        var turnStart = TarotCast.frame(1, .6, art).getFirst();
+        var turnEnd = TarotCast.frame(1, .9, art).getFirst();
+        check(Math.abs(turnStart.right() + turnEnd.right()) < 1e-9
+            && Math.abs(turnStart.back() + turnEnd.back()) < 1e-9, "magic circle turns halfway in 1.5 seconds");
         check(TarotCast.frame(5, .50, art).stream().noneMatch(art::contains), "card not shown early");
         long midCount = TarotCast.frame(5, .75, art).stream().filter(art::contains).count();
         check(midCount == 90, "half of card revealed halfway through card phase");
@@ -64,8 +69,9 @@ public final class TarotCastTest {
         many.addAll(art); many.addAll(art);
         var sampled = TarotCast.frame(5, 1, many);
         check(sampled.size() == TarotCast.MAX_POINTS, "oversized input art is sampled to budget");
-        check(sampled.get(180).equals(many.getFirst()) && sampled.getLast().equals(many.getLast()), "sampling spans the complete source image");
-        check(TarotCast.frame(5, 1, List.of()).size() == 180, "missing art still draws ground and wings");
+        int sceneCount = TarotCast.frame(5, 1, List.of()).size();
+        check(sampled.get(sceneCount).equals(many.getFirst()) && sampled.getLast().equals(many.getLast()), "sampling spans the complete source image");
+        check(sceneCount <= 104, "missing art still draws ground and wings with reduced particle budget");
         invalid(() -> TarotCast.frame(5, 1, List.of(new AlbumAura.Point(Double.NaN, 2, 1, 0xffffff, .6f))));
         try { finalFrame.clear(); throw new AssertionError("mutable frame"); }
         catch (UnsupportedOperationException expected) { checks++; }

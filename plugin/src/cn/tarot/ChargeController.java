@@ -93,9 +93,9 @@ final class ChargeController implements Listener {
         HandlerList.unregisterAll(this);
     }
 
-    /** Call on an allowed OFF_HAND right-click; do not cancel its native item-use event. */
+    /** Call on an allowed main-hand right-click; do not cancel its native item-use event. */
     boolean request(Player player) {
-        ItemStack card = player.getInventory().getItemInOffHand();
+        ItemStack card = player.getInventory().getItemInMainHand();
         if (!eligible(player) || !isCard.test(card) || !isConfigured(card) || !canStart.test(player)) {
             cancel(player);
             return false;
@@ -112,7 +112,7 @@ final class ChargeController implements Listener {
     void tick() {
         for (Charge charge : java.util.List.copyOf(charges.values())) {
             Player player = charge.player;
-            if (!eligible(player) || !charge.card.equals(player.getInventory().getItemInOffHand())) {
+            if (!eligible(player) || !charge.card.equals(player.getInventory().getItemInMainHand())) {
                 cancel(player);
                 continue;
             }
@@ -139,7 +139,7 @@ final class ChargeController implements Listener {
     }
 
     private static boolean using(Player player, Charge charge) {
-        return player.hasActiveItem() && player.getActiveItemHand() == EquipmentSlot.OFF_HAND
+        return player.hasActiveItem() && player.getActiveItemHand() == EquipmentSlot.HAND
             && charge.card.equals(player.getActiveItem());
     }
 
@@ -150,18 +150,21 @@ final class ChargeController implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void consume(PlayerItemConsumeEvent event) {
-        // Even an unapproved use (including the main hand) must never eat a tarot card.
+        // Even an unapproved use (including the offhand) must never eat a tarot card.
         if (!isCard.test(event.getItem())) return;
         boolean previouslyCancelled = event.isCancelled();
         event.setCancelled(true);
         Player player = event.getPlayer();
         Charge charge = charges.remove(player.getUniqueId());
-        if (previouslyCancelled || charge == null || event.getHand() != EquipmentSlot.OFF_HAND
+        if (previouslyCancelled || charge == null || !charge.observed || event.getHand() != EquipmentSlot.HAND
             || !eligible(player) || !charge.card.equals(event.getItem())
-            || !charge.card.equals(player.getInventory().getItemInOffHand()) || !using(player, charge)
-            || player.getActiveItemUsedTime() < CHARGE_TICKS || !canStart.test(player)) return;
-        // Paper sets remaining use time to zero before this event, including its lag compensation.
-        // Cancelling consumption keeps the exact physical card and also resets native use afterward.
+            || !charge.card.equals(player.getInventory().getItemInMainHand()) || !using(player, charge)
+            || !canStart.test(player)) return;
+        // The native completion event proves that the configured five-second use finished.
+        // Paper 26.3 calls startUsingItem(hand, true) immediately before this event, resetting
+        // remaining time to 100 and getActiveItemUsedTime() to zero. Testing for 100 here
+        // rejects every genuine completion. Keep the observed-use and identity gates instead.
+        // Cancelling consumption preserves the card; Paper then clears native use itself.
         activate.accept(player);
     }
 

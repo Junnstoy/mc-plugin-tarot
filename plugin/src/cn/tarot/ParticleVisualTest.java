@@ -10,7 +10,7 @@ final class ParticleVisualTest {
         Set<List<AlbumAura.Point>> distinct=new HashSet<>();
         for(int id=1;id<=22;id++){
             var art=CardParticleArt.get(id);check(art.size()==179,"complete card artwork");distinct.add(art);
-            var frame=TarotCast.frame(5,1,art);check(frame.size()==359,"five star scene includes circle, wings and artwork");
+            var frame=TarotCast.frame(5,1,art);check(frame.size()==283,"five star scene includes sparse circle, wings and complete artwork");
             for(var point:frame)check(Double.isFinite(point.right()+point.up()+point.back()),"finite geometry");
         }
         check(distinct.size()==22,"all 22 artworks are different");
@@ -20,7 +20,7 @@ final class ParticleVisualTest {
         check(Math.abs(at.getX()-11)<1e-9&&Math.abs(at.getY()-82.1)<1e-9&&Math.abs(at.getZ()-23.7)<1e-9,"local axes and head height");
         check(feet.getX()==12&&feet.getY()==80&&feet.getZ()==24,"render never mutates player location");
         Particle.Trail trail=new Particle.Trail(at,Color.RED,ParticleLines.LIFETIME);
-        check(trail.getDuration()==6&&trail.getTarget().equals(at),"stationary short-lived particles");
+        check(trail.getDuration()==3&&trail.getTarget().equals(at),"stationary particles have just one tick of overlap at two-tick refresh");
         try{
             Class<?> craft=Class.forName("org.bukkit.craftbukkit.CraftParticle");
             var method=craft.getMethod("createParticleParam",Particle.class,Object.class);

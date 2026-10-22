@@ -19,7 +19,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Aura animation test failed' }
 & "$javaBin/java.exe" -cp $classes cn.tarot.TarotCastTest
 if ($LASTEXITCODE -ne 0) { throw 'Cast animation test failed' }
 Copy-Item (Join-Path $root 'resources/*') $classes -Force
-$output = [IO.Path]::GetFullPath((Join-Path $root '../../outputs/TarotRainbow-3.3.0.jar'))
+$output = [IO.Path]::GetFullPath((Join-Path $root '../../outputs/TarotRainbow-3.3.1.jar'))
 $tempDir = Join-Path $root 'tmp'
 New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
 & "$javaBin/jar.exe" "-J-Djava.io.tmpdir=$tempDir" --create --file $output -C $classes .

@@ -8,7 +8,7 @@ import java.util.Objects;
 public final class TarotCast {
     private TarotCast() {}
     public static final int CAST_TICKS = 100;
-    public static final int MAX_POINTS = 360;
+    public static final int MAX_POINTS = 284;
     public static final int MAX_CARD_POINTS = 180;
     public static final double GROUND_HEIGHT = .08;
     private static final double TAU = Math.PI * 2;
@@ -35,31 +35,30 @@ public final class TarotCast {
         if (p == 0) return List.of();
         List<AlbumAura.Point> points = new ArrayList<>(MAX_POINTS);
         double grow = smooth(p / .45);
-        double radius = (.16 + .84 * grow) * (.65 + .07 * level);
-        double phase = p * TAU;
+        double radius = (.16 + .84 * grow) * (.65 + .07 * level) * .72;
+        double phase = p * TAU * (5.0 / 3.0);
         int color = COLORS[level];
         if (level == 1) {
-            ring(points, radius, 24, phase, color, false);
+            ring(points, radius, 14, phase, color, false);
         } else if (level == 2) {
-            ring(points, radius, 24, phase, color, false);
-            ring(points, radius * .72, 16, -phase, 0xffe0a3, false);
+            ring(points, radius, 16, phase, color, false);
+            ring(points, radius * .72, 10, -phase, 0xffe0a3, false);
             for (int i = 0; i < 4; i++) {
                 double angle = i * Math.PI / 2 + phase;
                 double x = radius * Math.cos(angle), z = radius * Math.sin(angle);
-                for (int corner = 0; corner < 4; corner++) {
-                    double a = corner * Math.PI / 2 + angle;
-                    add(points, x + Math.cos(a) * .07 * grow, GROUND_HEIGHT,
-                        z + Math.sin(a) * .07 * grow, 0xfff2cb, .55f);
-                }
+                // One accent per cardinal direction avoids four overlapping particles
+                // around the same point, which looked like a solid white patch.
+                add(points, x * 1.12, GROUND_HEIGHT, z * 1.12, 0xfff2cb, .55f);
             }
         } else {
-            // Exactly 60 ground points leaves room for 120 wing points and 180 card points at level five.
-            ring(points, radius, 30, phase, color, level == 5);
+            // Keep a clear pentagram with 40 ground points and 64 wing points;
+            // the remaining budget preserves the complete card artwork at level five.
+            ring(points, radius, 20, phase, color, level == 5);
             for (int i = 0; i < 5; i++) {
                 double a = phase + TAU * i / 5 - Math.PI / 2;
                 double b = phase + TAU * ((i + 2) % 5) / 5 - Math.PI / 2;
-                for (int j = 0; j < 6; j++) {
-                    double t = j / 5.0;
+                for (int j = 0; j < 4; j++) {
+                    double t = j / 3.0;
                     add(points, radius * .80 * (Math.cos(a) * (1 - t) + Math.cos(b) * t), GROUND_HEIGHT,
                         radius * .80 * (Math.sin(a) * (1 - t) + Math.sin(b) * t),
                         level == 5 ? RAINBOW[(i + 1) % RAINBOW.length] : color, .52f);

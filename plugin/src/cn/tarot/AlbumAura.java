@@ -6,13 +6,13 @@ import java.util.List;
 /** Deterministic, server-independent collection aura animation. Coordinates are relative to the feet. */
 public final class AlbumAura {
     private AlbumAura() {}
-    public static final int SWEEP_TICKS = 60;
-    public static final int DRAIN_TICKS = 20;
+    public static final int SWEEP_TICKS = 36;
+    public static final int DRAIN_TICKS = 12;
     public static final int PAUSE_TICKS = 20;
     public static final int CYCLE_TICKS = SWEEP_TICKS + DRAIN_TICKS + PAUSE_TICKS;
     public static final int IDLE_CYCLES = 7;
     public static final int UNFOLD_TICKS = 40;
-    public static final int MAX_POINTS = 160;
+    public static final int MAX_POINTS = 90;
     public static final double CIRCLE_HEIGHT = 2.10;
     public static final double MAX_ARC = Math.PI * 1.5;
     private static final double TAU = Math.PI * 2;
@@ -120,8 +120,10 @@ public final class AlbumAura {
         double head = TAU * Math.min(tick, SWEEP_TICKS) / SWEEP_TICKS;
         double arc = tick <= SWEEP_TICKS ? Math.min(head, MAX_ARC)
             : MAX_ARC * (1 - (tick - SWEEP_TICKS) / (double) DRAIN_TICKS);
-        double radius = .53 + tier * .025;
-        int count = Math.max(2, (int) Math.ceil(arc * radius / .06) + 1);
+        double radius = .38 + tier * .018;
+        // TRAIL points are visibly wider than dust. Leave space between their centers;
+        // tightly sampled outlines merge into an opaque band on an actual client.
+        int count = Math.max(2, (int) Math.ceil(arc * radius / .15) + 1);
         int color = tier >= 5 ? RAINBOW[colorIndex] : TIER_COLORS[tier];
         for (int i = 0; i < count; i++) {
             double angle = head - arc + arc * i / (count - 1) - Math.PI / 2;
@@ -131,24 +133,24 @@ public final class AlbumAura {
     private static void idleShape(List<Point> points, int tier, double unfold, long age) {
         double turn = (age % 1200) * TAU / 1200;
         if (tier == 1) {
-            ring(points, .59 * (.35 + .65 * unfold), 2.12, 0, 0, 32, TIER_COLORS[1], false, turn);
+            ring(points, .42 * (.35 + .65 * unfold), 2.12, 0, 0, 16, TIER_COLORS[1], false, turn);
         } else if (tier == 2) {
-            ring(points, .60 * (.35 + .65 * unfold), 2.12, 0, 0, 36, TIER_COLORS[2], false, turn);
-            ring(points, .38 * (.35 + .65 * unfold), 2.30, 0, 0, 28, 0xffdf83, false, -turn);
+            ring(points, .43 * (.35 + .65 * unfold), 2.12, 0, 0, 16, TIER_COLORS[2], false, turn);
+            ring(points, .27 * (.35 + .65 * unfold), 2.30, 0, 0, 12, 0xffdf83, false, -turn);
         } else if (tier == 3) {
             double grow = .35 + .65 * unfold;
-            ring(points, .71 * grow, 2.15, 0, 0, 32, TIER_COLORS[3], false, turn);
+            ring(points, .51 * grow, 2.15, 0, 0, 18, TIER_COLORS[3], false, turn);
             // A five-point star in the horizontal plane, slowly rotating inside the halo.
             for (int i = 0; i < 5; i++) {
                 double start = turn + TAU * i / 5 - Math.PI / 2;
                 double end = turn + TAU * ((i + 2) % 5) / 5 - Math.PI / 2;
-                line(points, Math.cos(start) * .59 * grow, 2.15, Math.sin(start) * .59 * grow,
-                    Math.cos(end) * .59 * grow, 2.15, Math.sin(end) * .59 * grow, 8, 0xfff4ac, .48f);
+                line(points, Math.cos(start) * .42 * grow, 2.15, Math.sin(start) * .42 * grow,
+                    Math.cos(end) * .42 * grow, 2.15, Math.sin(end) * .42 * grow, 4, 0xfff4ac, .48f);
             }
-            ring(points, .22 * grow, 2.34, 0, 0, 16, 0xffc84f, false, -turn);
+            ring(points, .16 * grow, 2.34, 0, 0, 8, 0xffc84f, false, -turn);
         } else {
             wings(points, tier, unfold);
-            if (tier == 6) ring(points, .64, 2.18, 0, 0, 32, 0, true, turn);
+            if (tier == 6) ring(points, .46, 2.18, 0, 0, 18, 0, true, turn);
         }
     }
     private static void ring(List<Point> points, double radius, double y, double z, double tilt,
@@ -177,7 +179,7 @@ public final class AlbumAura {
         boolean rainbow = tier >= 5;
         double scale = tier == 4 ? .72 : 1;
         double spread = .12 + .88 * unfold;
-        int count = tier == 4 ? 46 : 60;
+        int count = tier == 4 ? 26 : 32;
         double[] cumulative = new double[WING.length];
         for (int i = 1; i < WING.length; i++) cumulative[i] = cumulative[i - 1]
             + Math.hypot(WING[i][0] - WING[i - 1][0], WING[i][1] - WING[i - 1][1]);

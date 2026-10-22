@@ -6,7 +6,9 @@ import org.bukkit.entity.Player;
 
 /** Exact-position, short-lived points overlap between frames instead of flashing in bursts. */
 final class ParticleLines {
-    static final int LIFETIME=6;
+    // Frames arrive every two ticks: one tick of overlap prevents blinking without
+    // accumulating the three full layers produced by the former six-tick lifetime.
+    static final int LIFETIME=3;
     private ParticleLines(){}
     static Location position(Location feet,double poseOffset,AlbumAura.Point point){
         double yaw=Math.toRadians(feet.getYaw()),cos=Math.cos(yaw),sin=Math.sin(yaw);
