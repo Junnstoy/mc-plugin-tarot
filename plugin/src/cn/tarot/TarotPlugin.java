@@ -62,6 +62,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     };
     private final Map<UUID,Core.Active> active=new HashMap<>();
     private final Map<UUID,Long> gestures=new HashMap<>();
+    private final Map<UUID,Long> creativeMergeHints=new HashMap<>();
     private final Set<UUID> fakeIcon=new HashSet<>();
     private NamespacedKey cardKey,levelKey,packageKey;
     private long durationMillis,lockMillis;
@@ -102,9 +103,19 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         return Set.of("pack","box","case").contains(k)?k:"";
     }
     private boolean tarot(ItemStack s) {return cardId(s)>0||!packageType(s).isEmpty();}
+    private static void appearance(ItemMeta meta,String model) {
+        // A vanilla item model always exists, even when no resource pack is loaded.
+        // The pack selects tarot artwork from this string; ordinary paper falls back.
+        meta.setItemModel(null);
+        var data=meta.getCustomModelDataComponent();data.setStrings(List.of("tarot:"+model));
+        meta.setCustomModelDataComponent(data);
+    }
+    private static boolean vanillaPaperModel(ItemMeta meta) {
+        return !meta.hasItemModel()||NamespacedKey.minecraft("paper").equals(meta.getItemModel());
+    }
     public ItemStack makeCard(int id,int level) {
         Card c=card(id);ItemStack s=new ItemStack(Material.PAPER);ItemMeta m=s.getItemMeta();
-        m.setMaxStackSize(1);m.setItemModel(new NamespacedKey("tarot","card_"+id+"_"+level));
+        m.setMaxStackSize(1);appearance(m,"card_"+id+"_"+level);
         m.getPersistentDataContainer().set(cardKey,PersistentDataType.INTEGER,id);m.getPersistentDataContainer().set(levelKey,PersistentDataType.INTEGER,level);
         m.itemName(text(RARITIES[c.rarity]+" · "+c.name+" "+"★".repeat(level),RARITY_COLORS[c.rarity]));
         List<Component> lore=new ArrayList<>();
@@ -112,13 +123,13 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         lore.add(text("副手持牌 · 潜行 + 右键激活",0x80ddff));
         lore.add(text("持续 "+time(durationMillis)+" · 换牌锁定 "+time(lockMillis),0xffdc70));
         lore.add(text("现实时间计时，离线仍计时；移出副手仍生效",0xa9a9bd));
-        lore.add(text(level<5?"背包内两张同名同星卡重叠：升级一星":"已达到最高五星",0xe7bbff));
+        lore.add(text(level<5?"生存／冒险背包：同名同星卡重叠升级":"已达到最高五星",0xe7bbff));
         if(Arrays.stream(c.bonuses).anyMatch(b->b.attribute==Attribute.LUCK))lore.add(text("幸运不会增加本卡包的稀有牌概率",0xaaaaaa));
         m.lore(lore);s.setItemMeta(m);return s;
     }
     public ItemStack makePackage(String kind,int amount) {
         ItemStack s=new ItemStack(Material.PAPER,amount);ItemMeta m=s.getItemMeta();m.setMaxStackSize(64);
-        m.getPersistentDataContainer().set(packageKey,PersistentDataType.STRING,kind);m.setItemModel(new NamespacedKey("tarot",kind));
+        m.getPersistentDataContainer().set(packageKey,PersistentDataType.STRING,kind);appearance(m,kind);
         String name=switch(kind){case "pack"->"彩虹塔罗卡包 · 5 张";case "box"->"彩虹塔罗卡盒 · 8 包";default->"彩虹塔罗卡箱 · 48 盒";};
         m.itemName(text(name,0xffdc70));m.lore(List.of(text("副手持有 · 潜行 + 右键拆开",0x80ddff),text("每包至少一张 SR 或更高；抽出均为一星",0xe7bbff)));
         s.setItemMeta(m);return s;
@@ -182,31 +193,43 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         if(!(e.getWhoClicked() instanceof Player p)||e.getClickedInventory()!=p.getInventory())return;
         if(e.getSlot()<0||e.getSlot()>35)return;
         ItemStack cursor=migrateItem(e.getCursor()),target=migrateItem(e.getCurrentItem());int a=cardId(cursor),b=cardId(target);
-        if(a==0||b==0||!e.getClick().isMouseClick()||e.isShiftClick())return;
+        // Creative events carry a client-proposed slot replacement, not a reliable
+        // server cursor. CREATIVE is not a mouse ClickType, so explain this before
+        // the mouse/pair guard. Leave ordinary creative inventory movement alone.
+        if(e instanceof InventoryCreativeEvent||p.getGameMode()==GameMode.CREATIVE){
+            if(a>0||b>0)creativeMergeHint(p);
+            return;
+        }
+        if(a==0||b==0||(e.getClick()!=ClickType.LEFT&&e.getClick()!=ClickType.RIGHT))return;
         e.setCancelled(true);
-        if(e instanceof InventoryCreativeEvent){message(p,"请切换生存模式后合成升级。");return;}
         if(!Core.canMerge(a,value(cursor,levelKey),b,value(target,levelKey),cursor.getAmount(),target.getAmount())) {
-            message(p,"需要两张同名、同星级的卡；五星已满级。");return;
+            message(p,value(cursor,levelKey)==5&&value(target,levelKey)==5?"五星已经满级，不能继续升级。":"需要两张同名、同星级的一至四星卡，每格各一张。");return;
         }
         int level=value(target,levelKey)+1;
         e.setCurrentItem(makeCard(a,level));e.getView().setCursor(null);
         p.playSound(p.getLocation(),Sound.BLOCK_ENCHANTMENT_TABLE_USE,.8f,1.4f);burst(p,level);
         message(p,"升级成功：「"+card(a).name+"」"+"★".repeat(level)+"。已激活效果保持原星级，重新激活后更新。");
     }
-    @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void drag(InventoryDragEvent e) {
-        if(!(e.getWhoClicked() instanceof Player p)||e.getRawSlots().size()!=1)return;
-        int raw=e.getRawSlots().iterator().next();
-        if(e.getView().getInventory(raw)!=p.getInventory())return;
-        int slot=e.getView().convertSlot(raw);if(slot<0||slot>35)return;
-        ItemStack cursor=migrateItem(e.getOldCursor()),target=migrateItem(p.getInventory().getItem(slot));
-        int a=cardId(cursor),b=cardId(target);if(a==0||b==0)return;
-        e.setCancelled(true);
-        if(p.getGameMode()==GameMode.CREATIVE||!Core.canMerge(a,value(cursor,levelKey),b,value(target,levelKey),cursor.getAmount(),target.getAmount()))return;
-        p.getInventory().setItem(slot,makeCard(a,value(target,levelKey)+1));e.getView().setCursor(null);
-        p.playSound(p.getLocation(),Sound.BLOCK_ENCHANTMENT_TABLE_USE,.8f,1.4f);message(p,"同名同星卡升级成功。");
+    private void creativeMergeHint(Player p) {
+        long now=System.currentTimeMillis();
+        Long previous=creativeMergeHints.get(p.getUniqueId());
+        if(previous!=null&&now-previous<2000)return;
+        creativeMergeHints.put(p.getUniqueId(),now);
+        message(p,"创造背包不支持合成升级。请切换生存或冒险模式，再将一张卡放到同名同星卡上；五星已满级。");
     }
+    // Native drag distributes a stack between empty/non-full slots. Cards are
+    // unstackable, so pickup + placement is handled above by InventoryClickEvent.
+    // Do not synthesize an upgrade in a cancelled InventoryDragEvent: Minecraft
+    // restores its pre-event cursor afterwards, which could retain the material.
     private ItemStack migrateItem(ItemStack item) {
-        if(item==null||item.getType()!=Material.PAPER||tarot(item))return item;
+        if(item==null||item.getType()!=Material.PAPER)return item;
+        if(tarot(item)){
+            int id=cardId(item);String model=id>0?"card_"+id+"_"+value(item,levelKey):packageType(item);
+            ItemMeta meta=item.getItemMeta();
+            if(vanillaPaperModel(meta)&&
+                    meta.getCustomModelDataComponent().getStrings().equals(List.of("tarot:"+model)))return item;
+            ItemStack updated=item.clone();appearance(meta,model);updated.setItemMeta(meta);return updated;
+        }
         try {
             var root=Bukkit.getUnsafe().serializeItemAsJson(item);
             var components=root.getAsJsonObject("components");if(components==null)return item;
@@ -293,7 +316,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         if(changed||seconds%60==0)saveState();
     }
     @EventHandler public void join(PlayerJoinEvent e) {Bukkit.getScheduler().runTaskLater(this,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},10);}
-    @EventHandler public void quit(PlayerQuitEvent e) {removeAttributes(e.getPlayer());fakeIcon.remove(e.getPlayer().getUniqueId());gestures.remove(e.getPlayer().getUniqueId());saveState();}
+    @EventHandler public void quit(PlayerQuitEvent e) {removeAttributes(e.getPlayer());fakeIcon.remove(e.getPlayer().getUniqueId());gestures.remove(e.getPlayer().getUniqueId());creativeMergeHints.remove(e.getPlayer().getUniqueId());saveState();}
     @EventHandler public void respawn(PlayerRespawnEvent e) {Bukkit.getScheduler().runTaskLater(this,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},2);}
     @EventHandler public void world(PlayerChangedWorldEvent e) {Bukkit.getScheduler().runTaskLater(this,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},2);}
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void effect(EntityPotionEffectEvent e) {
@@ -339,7 +362,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
             if(args.length<2)return false;Player p=Bukkit.getPlayerExact(args[1]);if(p==null){sender.sendMessage("玩家必须在线。");return true;}
             switch(args[0].toLowerCase(Locale.ROOT)){
                 case "give"->{if(args.length<3||!Set.of("pack","box","case").contains(args[2]))return false;int count=args.length>3?Integer.parseInt(args[3]):1;if(count<1||count>64)throw new IllegalArgumentException();if(!give(p,makePackage(args[2],count))){sender.sendMessage("发放失败：背包空间不足，未产生任何物品。");return true;}}
-                case "card"->{if(args.length<4)return false;int id=Integer.parseInt(args[2]),level=Integer.parseInt(args[3]);if(id<1||id>22||level<1||level>5)throw new IllegalArgumentException();if(!give(p,makeCard(id,level))){sender.sendMessage("发放失败：背包空间不足，未产生任何物品。");return true;}}
+                case "card"->{if(args.length!=4){sender.sendMessage("用法：/tarot card <玩家名> <牌编号1–22> <星级1–5>，每次发放一张；请勿添加额外数字。");return true;}int id=Integer.parseInt(args[2]),level=Integer.parseInt(args[3]);if(id<1||id>22||level<1||level>5)throw new IllegalArgumentException();if(!give(p,makeCard(id,level))){sender.sendMessage("发放失败：背包空间不足，未产生任何物品。");return true;}if(p.getGameMode()==GameMode.CREATIVE)creativeMergeHint(p);}
                 case "clear"->{active.remove(p.getUniqueId());removeAttributes(p);clampHealth(p);removeIcon(p);saveState();message(p,"管理员已清除塔罗效果及换牌锁定。");}
                 default->{return false;}
             }
@@ -372,7 +395,8 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         filled[0]=makePackage("box",17);check.accept(InventoryPlan.deposit(filled,List.of(makePackage("box",48)))==null);
         for(int id=1;id<=22;id++)for(int level=1;level<=5;level++){
             ItemStack c=makeCard(id,level);check.accept(cardId(c)==id&&value(c,levelKey)==level&&c.getMaxStackSize()==1);
-            check.accept(c.getItemMeta().getItemModel().getKey().equals("card_"+id+"_"+level));
+            check.accept(vanillaPaperModel(c.getItemMeta()));
+            check.accept(c.getItemMeta().getCustomModelDataComponent().getStrings().equals(List.of("tarot:card_"+id+"_"+level)));
         }
         // Use the exact command-item parser for legacy component coverage.
         var legacy=Bukkit.getItemFactory().createItemStack("minecraft:paper[minecraft:custom_data={tarot:{card:8,level:3}},minecraft:max_stack_size=1]");
@@ -381,7 +405,20 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         for(String k:List.of("pack","box","case")){
             var old=Bukkit.getItemFactory().createItemStack("minecraft:paper[minecraft:custom_data={tarot:{package:\""+k+"\"}},minecraft:max_stack_size=1]");
             check.accept(packageType(migrateItem(old)).equals(k));
+            ItemStack previous=makePackage(k,48);ItemMeta meta=previous.getItemMeta();
+            meta.setItemModel(new NamespacedKey("tarot",k));meta.setCustomModelDataComponent(null);previous.setItemMeta(meta);
+            ItemStack next=migrateItem(previous);
+            check.accept(next.getAmount()==48&&vanillaPaperModel(next.getItemMeta()));
+            check.accept(next.getItemMeta().getCustomModelDataComponent().getStrings().equals(List.of("tarot:"+k)));
+            check.accept(previous.getItemMeta().getItemModel().getNamespace().equals("tarot")&&migrateItem(next)==next);
         }
-        getLogger().info("TAROT SELFTEST PASS: full/four/five free slots; stack16+48 and17+48; no mutation on reject;110 cards; legacy migration.");
+        ItemStack previous=makeCard(22,4);ItemMeta meta=previous.getItemMeta();
+        meta.setItemModel(new NamespacedKey("tarot","card_22_4"));meta.setCustomModelDataComponent(null);
+        meta.displayName(Component.text("kept custom name"));previous.setItemMeta(meta);
+        ItemStack next=migrateItem(previous);
+        check.accept(cardId(next)==22&&value(next,levelKey)==4&&next.getItemMeta().displayName().equals(meta.displayName()));
+        check.accept(vanillaPaperModel(next.getItemMeta())&&migrateItem(next)==next);
+        UpgradeEventTest.run(this);
+        getLogger().info("TAROT SELFTEST PASS: full/four/five free slots; stack16+48 and17+48; no mutation on reject;110 cards; legacy and V3.0.0 migration; vanilla paper fallback.");
     }
 }

@@ -1,0 +1,2344 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
+    "index": 0,
+    "cases": [
+      {
+        "when": "tarot:card_1_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_1_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_1_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_1_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_1_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_1_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_1_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_1_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_1_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_1_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_2_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_2_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_2_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_2_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_2_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_2_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_2_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_2_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_2_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_2_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_3_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_3_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_3_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_3_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_3_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_3_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_3_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_3_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_3_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_3_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_4_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_4_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_4_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_4_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_4_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_4_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_4_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_4_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_4_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_4_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_5_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_5_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_5_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_5_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_5_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_5_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_5_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_5_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_5_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_5_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_6_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_6_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_6_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_6_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_6_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_6_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_6_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_6_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_6_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_6_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_7_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_7_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_7_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_7_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_7_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_7_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_7_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_7_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_7_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_7_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_8_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_8_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_8_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_8_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_8_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_8_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_8_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_8_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_8_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_8_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_9_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_9_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_9_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_9_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_9_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_9_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_9_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_9_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_9_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_9_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_10_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_10_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_10_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_10_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_10_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_10_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_10_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_10_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_10_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_10_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_11_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_11_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_11_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_11_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_11_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_11_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_11_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_11_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_11_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_11_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_12_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_12_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_12_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_12_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_12_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_12_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_12_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_12_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_12_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_12_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_13_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_13_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_13_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_13_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_13_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_13_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_13_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_13_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_13_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_13_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_14_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_14_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_14_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_14_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_14_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_14_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_14_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_14_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_14_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_14_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_15_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_15_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_15_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_15_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_15_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_15_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_15_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_15_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_15_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_15_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_16_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_16_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_16_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_16_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_16_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_16_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_16_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_16_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_16_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_16_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_17_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_17_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_17_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_17_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_17_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_17_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_17_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_17_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_17_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_17_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -10034283
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_18_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_18_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_18_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_18_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_18_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_18_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_18_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_18_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_18_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_18_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_19_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_19_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_19_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_19_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_19_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_19_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_19_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_19_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_19_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_19_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -27078
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_20_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_20_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_20_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_20_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_20_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_20_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_20_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_20_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_20_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_20_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_21_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_21_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_21_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_21_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_21_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_21_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_21_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_21_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_21_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_21_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_22_1",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_22_1",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -43169
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_22_2",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_22_2",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -7072
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_22_3",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_22_3",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10950931
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_22_4",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_22_4",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -10579201
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:card_22_5",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/card_22_5",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -4031745
+            },
+            {
+              "type": "minecraft:constant",
+              "value": -15264979
+            }
+          ]
+        }
+      },
+      {
+        "when": "tarot:pack",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/pack"
+        }
+      },
+      {
+        "when": "tarot:box",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/box"
+        }
+      },
+      {
+        "when": "tarot:case",
+        "model": {
+          "type": "minecraft:model",
+          "model": "tarot:item/case"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:item/paper"
+    }
+  }
+}
