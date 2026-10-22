@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 160
 scoreboard players set @s tr_active 10
 scoreboard players set @s tr_alvl 1
 tellraw @s {"text":"隐者 · 技能已激活","color":"white","italic":false}
+function tarot:fx/10_1

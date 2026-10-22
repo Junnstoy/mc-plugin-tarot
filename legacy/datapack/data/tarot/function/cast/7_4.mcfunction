@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 300
 scoreboard players set @s tr_active 7
 scoreboard players set @s tr_alvl 4
 tellraw @s {"text":"恋人 · 技能已激活","color":"white","italic":false}
+function tarot:fx/7_4

@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 360
 scoreboard players set @s tr_active 18
 scoreboard players set @s tr_alvl 5
 tellraw @s {"text":"星星 · 技能已激活","color":"white","italic":false}
+function tarot:fx/18_5

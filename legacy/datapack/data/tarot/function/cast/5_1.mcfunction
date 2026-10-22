@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 160
 scoreboard players set @s tr_active 5
 scoreboard players set @s tr_alvl 1
 tellraw @s {"text":"皇帝 · 技能已激活","color":"aqua","italic":false}
+function tarot:fx/5_1

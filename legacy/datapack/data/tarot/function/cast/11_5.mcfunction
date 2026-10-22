@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 360
 scoreboard players set @s tr_active 11
 scoreboard players set @s tr_alvl 5
 tellraw @s {"text":"命运之轮 · 技能已激活","color":"light_purple","italic":false}
+function tarot:fx/11_5

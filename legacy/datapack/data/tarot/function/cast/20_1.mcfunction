@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 160
 scoreboard players set @s tr_active 20
 scoreboard players set @s tr_alvl 1
 tellraw @s {"text":"太阳 · 技能已激活","color":"aqua","italic":false}
+function tarot:fx/20_1

@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 160
 scoreboard players set @s tr_active 2
 scoreboard players set @s tr_alvl 1
 tellraw @s {"text":"魔术师 · 技能已激活","color":"green","italic":false}
+function tarot:fx/2_1

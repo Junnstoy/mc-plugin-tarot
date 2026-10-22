@@ -5,3 +5,4 @@ execute if score @s tr_pick matches 3 run function tarot:give/6_1
 execute if score @s tr_pick matches 4 run function tarot:give/8_1
 execute if score @s tr_pick matches 5 run function tarot:give/12_1
 execute if score @s tr_pick matches 6 run function tarot:give/19_1
+execute unless score @s tr_best matches 2.. run scoreboard players set @s tr_best 2

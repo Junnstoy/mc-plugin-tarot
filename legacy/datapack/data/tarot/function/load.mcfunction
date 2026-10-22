@@ -10,3 +10,4 @@ scoreboard objectives add tr_pick dummy
 scoreboard objectives add tr_on dummy
 scoreboard objectives add tarot_upgrade trigger
 execute unless score #enabled tr_on matches 0..1 run scoreboard players set #enabled tr_on 1
+scoreboard objectives add tr_best dummy

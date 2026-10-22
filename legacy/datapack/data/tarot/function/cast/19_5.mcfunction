@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 360
 scoreboard players set @s tr_active 19
 scoreboard players set @s tr_alvl 5
 tellraw @s {"text":"月亮 · 技能已激活","color":"green","italic":false}
+function tarot:fx/19_5

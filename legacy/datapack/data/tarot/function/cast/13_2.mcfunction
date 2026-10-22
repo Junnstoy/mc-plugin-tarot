@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 200
 scoreboard players set @s tr_active 13
 scoreboard players set @s tr_alvl 2
 tellraw @s {"text":"倒吊人 · 技能已激活","color":"white","italic":false}
+function tarot:fx/13_2

@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 360
 scoreboard players set @s tr_active 14
 scoreboard players set @s tr_alvl 5
 tellraw @s {"text":"死神 · 技能已激活","color":"light_purple","italic":false}
+function tarot:fx/14_5

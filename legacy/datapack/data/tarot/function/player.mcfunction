@@ -1,3 +1,4 @@
+execute if score @s tr_cd matches 1 run function tarot:ready
 scoreboard players add @s tr_cd 0
 scoreboard players add @s tr_edge 0
 scoreboard players add @s tr_time 0

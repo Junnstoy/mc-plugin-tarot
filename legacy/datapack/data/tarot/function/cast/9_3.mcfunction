@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 240
 scoreboard players set @s tr_active 9
 scoreboard players set @s tr_alvl 3
 tellraw @s {"text":"力量 · 技能已激活","color":"aqua","italic":false}
+function tarot:fx/9_3

@@ -1,1 +1,1 @@
-give @s minecraft:paper[minecraft:max_stack_size=1,minecraft:custom_data={tarot:{package:"pack"}},minecraft:item_name={"text":"塔罗卡包 · 5张","color":"gold","italic":false}]
+give @s minecraft:paper[minecraft:max_stack_size=1,minecraft:custom_data={tarot:{package:"pack"}},minecraft:item_model="tarot:pack",minecraft:item_name={"text":"塔罗卡包 · 5张","color":"gold","italic":false}]

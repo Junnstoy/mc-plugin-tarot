@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 240
 scoreboard players set @s tr_active 8
 scoreboard players set @s tr_alvl 3
 tellraw @s {"text":"战车 · 技能已激活","color":"green","italic":false}
+function tarot:fx/8_3

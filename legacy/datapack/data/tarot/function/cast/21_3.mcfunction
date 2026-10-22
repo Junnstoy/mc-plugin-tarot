@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 240
 scoreboard players set @s tr_active 21
 scoreboard players set @s tr_alvl 3
 tellraw @s {"text":"审判 · 技能已激活","color":"gold","italic":false}
+function tarot:fx/21_3

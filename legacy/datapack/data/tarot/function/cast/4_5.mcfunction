@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 360
 scoreboard players set @s tr_active 4
 scoreboard players set @s tr_alvl 5
 tellraw @s {"text":"女皇 · 技能已激活","color":"aqua","italic":false}
+function tarot:fx/4_5

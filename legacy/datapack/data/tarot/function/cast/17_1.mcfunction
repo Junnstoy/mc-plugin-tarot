@@ -6,3 +6,4 @@ scoreboard players set @s tr_time 160
 scoreboard players set @s tr_active 17
 scoreboard players set @s tr_alvl 1
 tellraw @s {"text":"高塔 · 技能已激活","color":"light_purple","italic":false}
+function tarot:fx/17_1
