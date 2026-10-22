@@ -1964,5 +1964,33 @@
         }
       }
     ]
+  },
+  {
+    "tag": "v3.1.0",
+    "description": "收集册：可取回收藏、羁绊奖励与收集特效",
+    "sources": [
+      {
+        "archive": "TarotRainbow-3.1.0-source.zip",
+        "archive_sha256": "6f820899c4656f542b76dc9ef466ca6cc51a8f83544f1e18126bd982949095bf",
+        "target": "plugin",
+        "files": {
+          "src/cn/tarot/AlbumMenu.java": "92d903b1e59d62a9fe1bcdd4a7d634967bf43c5d55b2e43bf133e39ef6b77eb0",
+          "src/cn/tarot/AlbumMenuTest.java": "4cee9113980b76d6a24d5cbb91242bfcfde8af1772c776bbf324f66bea4b083c",
+          "src/cn/tarot/AlbumRules.java": "d54e451cf12ef1de253891e3155b9b1441074529fcaab7be0c964f276d95ebdb",
+          "src/cn/tarot/AlbumRulesTest.java": "67e43a5fc5c2c6074cb2a8ee447b86df97aa18b76917b0d0ea2a730428bbb0cb",
+          "src/cn/tarot/AlbumService.java": "e481cf55ceb766a32d261d42efb242d35d3a9226a494337a06bfcb43e7fae15a",
+          "src/cn/tarot/AlbumServiceTest.java": "6a7c97385aac051ed95f42240ddd524645351345bd82dbc1e1c086f2b51ebb49",
+          "src/cn/tarot/AlbumStore.java": "025708f96c8cb2f4b47556656ebcc36e3da579902e58fec09259a85838fd4675",
+          "src/cn/tarot/Core.java": "277be9eb5bf12962afd968210800892bfc00f027298fc5b32db2940f0607f9e0",
+          "src/cn/tarot/CoreTest.java": "f7ecbadb187dff1e994bbbb45ff05bb74f20f706edcab9f4af4508ddbb8b0769",
+          "src/cn/tarot/InventoryPlan.java": "ba77de88a25ad2097e1a0395ffcfd6c806ac523fcc5532c7fe1fa3ac787d8d1e",
+          "src/cn/tarot/TarotPlugin.java": "c107ef5b19a1017f4551683e5480bab30e3590bb8bd709ae6a5969f049782681",
+          "src/cn/tarot/UpgradeEventTest.java": "f9a703fa3eb9f15a6c63cc98543377ac72b6cb73447ff2646259a4cb58a26b6a",
+          "resources/config.yml": "735e1b43f09c5668c03f4af868cb7417f7a3c83009fbf1a62384236f12633ff2",
+          "resources/plugin.yml": "95ea34fd667f56d21226c20adcf850238167279e72df7edc7f1b3904f4e54def",
+          "build.ps1": "227a098330ebc395e1a0d1782b598bc4b78f745d9dae6ee53cbcbe26dd2621bb"
+        }
+      }
+    ]
   }
 ]

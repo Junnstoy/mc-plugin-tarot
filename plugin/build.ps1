@@ -10,8 +10,10 @@ $sources = @(Get-ChildItem (Join-Path $root 'src') -Recurse -Filter '*.java' | F
 if ($LASTEXITCODE -ne 0) { throw 'Compilation failed' }
 & "$javaBin/java.exe" -cp $classes cn.tarot.CoreTest
 if ($LASTEXITCODE -ne 0) { throw 'Rules test failed' }
+& "$javaBin/java.exe" -cp $classes cn.tarot.AlbumRulesTest
+if ($LASTEXITCODE -ne 0) { throw 'Album rules test failed' }
 Copy-Item (Join-Path $root 'resources/*') $classes -Force
-$output = [IO.Path]::GetFullPath((Join-Path $root '../../outputs/TarotRainbow-3.0.1.jar'))
+$output = [IO.Path]::GetFullPath((Join-Path $root '../../outputs/TarotRainbow-3.1.0.jar'))
 $tempDir = Join-Path $root 'tmp'
 New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
 & "$javaBin/jar.exe" "-J-Djava.io.tmpdir=$tempDir" --create --file $output -C $classes .

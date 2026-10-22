@@ -69,6 +69,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     private boolean iconEnabled,barEnabled;
     private File stateFile;
     private int seconds;
+    private AlbumService albums;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -80,10 +81,12 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         getServer().getPluginManager().registerEvents(this,this);
         Objects.requireNonNull(getCommand("tarot")).setExecutor(this);getCommand("tarot").setTabCompleter(this);
         for(Player p:Bukkit.getOnlinePlayers()) restore(p);
+        albums=new AlbumService(this);albums.start();
         Bukkit.getScheduler().runTaskTimer(this,this::tick,20,20);
         getLogger().info("22 cards x 5 levels ready; real-time duration="+durationMillis/1000+"s, switch lock="+lockMillis/1000+"s. Remove legacy tarot datapacks before use.");
     }
     @Override public void onDisable() {
+        if(albums!=null)albums.shutdown();
         saveState();
         for(Player p:Bukkit.getOnlinePlayers()) { removeAttributes(p);clampHealth(p);removeIcon(p); }
     }
@@ -96,7 +99,8 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         if(s==null||s.getType()!=Material.PAPER||!s.hasItemMeta())return 0;
         return s.getItemMeta().getPersistentDataContainer().getOrDefault(key,PersistentDataType.INTEGER,0);
     }
-    private int cardId(ItemStack s) {int id=value(s,cardKey),level=value(s,levelKey);return id>=1&&id<=22&&level>=1&&level<=5?id:0;}
+    int cardId(ItemStack s) {int id=value(s,cardKey),level=value(s,levelKey);return id>=1&&id<=22&&level>=1&&level<=5?id:0;}
+    int cardLevel(ItemStack s) {return value(s,levelKey);}
     private String packageType(ItemStack s) {
         if(s==null||s.getType()!=Material.PAPER||!s.hasItemMeta())return "";
         String k=s.getItemMeta().getPersistentDataContainer().getOrDefault(packageKey,PersistentDataType.STRING,"");
@@ -183,10 +187,12 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     }
     @EventHandler(priority=EventPriority.HIGH) public void interact(PlayerInteractEvent e) {
         if(e.getAction()!=Action.RIGHT_CLICK_AIR&&e.getAction()!=Action.RIGHT_CLICK_BLOCK)return;
+        if(albums!=null&&albums.use(e.getPlayer())){e.setUseInteractedBlock(Event.Result.DENY);e.setUseItemInHand(Event.Result.DENY);e.setCancelled(true);return;}
         // Paper may deliver the usable offhand gesture without a mainhand event.
         if(handle(e.getPlayer())){e.setUseInteractedBlock(Event.Result.DENY);e.setUseItemInHand(Event.Result.DENY);e.setCancelled(true);}
     }
     @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void entityInteract(PlayerInteractEntityEvent e) {
+        if(albums!=null&&albums.use(e.getPlayer())){e.setCancelled(true);return;}
         if(handle(e.getPlayer()))e.setCancelled(true);
     }
     @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void merge(InventoryClickEvent e) {
@@ -221,7 +227,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     // unstackable, so pickup + placement is handled above by InventoryClickEvent.
     // Do not synthesize an upgrade in a cancelled InventoryDragEvent: Minecraft
     // restores its pre-event cursor afterwards, which could retain the material.
-    private ItemStack migrateItem(ItemStack item) {
+    ItemStack migrateItem(ItemStack item) {
         if(item==null||item.getType()!=Material.PAPER)return item;
         if(tarot(item)){
             int id=cardId(item);String model=id>0?"card_"+id+"_"+value(item,levelKey):packageType(item);
@@ -257,7 +263,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         }
         return count;
     }
-    @EventHandler public void inventoryClose(InventoryCloseEvent e){if(e.getPlayer() instanceof Player p)Bukkit.getScheduler().runTask(this,()->{if(p.isOnline())migrate(p);});}
+    @EventHandler public void inventoryClose(InventoryCloseEvent e){if(isEnabled()&&e.getPlayer() instanceof Player p)Bukkit.getScheduler().runTask(this,()->{if(p.isOnline())migrate(p);});}
     private Set<Attribute> allAttributes() {return Arrays.stream(CARDS).flatMap(c->Arrays.stream(c.bonuses)).map(Bonus::attribute).collect(Collectors.toSet());}
     private void removeAttributes(Player p) {
         for(Attribute type:allAttributes()) {
@@ -347,6 +353,15 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         catch(IOException ex){getLogger().severe("Cannot persist tarot activation deadlines: "+ex.getMessage());}
     }
     @Override public boolean onCommand(CommandSender sender,Command command,String label,String[] args) {
+        if(args.length==1&&Set.of("album","collection","aura").contains(args[0].toLowerCase(Locale.ROOT))){
+            if(!(sender instanceof Player p)){sender.sendMessage("该命令需要玩家执行。");return true;}
+            switch(args[0].toLowerCase(Locale.ROOT)){
+                case "album"->albums.giveOrOpen(p);
+                case "collection"->albums.status(p);
+                case "aura"->albums.toggleParticles(p);
+            }
+            return true;
+        }
         if(args.length>0&&args[0].equalsIgnoreCase("migrate")&&sender instanceof Player p){message(p,"已更新 "+migrate(p)+" 个旧版卡牌／包装。");return true;}
         if(args.length>0&&args[0].equalsIgnoreCase("selftest")&&sender.hasPermission("tarot.admin")){selftest();sender.sendMessage("TAROT SELFTEST PASS");return true;}
         if(args.length==0||args[0].equalsIgnoreCase("status")) {
@@ -371,7 +386,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     }
     @Override public List<String> onTabComplete(CommandSender sender,Command cmd,String alias,String[] args) {
         List<String> options=new ArrayList<>();
-        if(args.length==1)options=sender.hasPermission("tarot.admin")?List.of("status","migrate","give","card","clear","selftest"):List.of("status","migrate");
+        if(args.length==1)options=sender.hasPermission("tarot.admin")?List.of("status","migrate","album","collection","aura","give","card","clear","selftest"):List.of("status","migrate","album","collection","aura");
         else if(sender.hasPermission("tarot.admin")) {
             if(args.length==2)options=Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
             else if(args.length==3&&args[0].equals("give"))options=List.of("pack","box","case");
@@ -419,6 +434,8 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
         check.accept(cardId(next)==22&&value(next,levelKey)==4&&next.getItemMeta().displayName().equals(meta.displayName()));
         check.accept(vanillaPaperModel(next.getItemMeta())&&migrateItem(next)==next);
         UpgradeEventTest.run(this);
+        AlbumServiceTest.run(this);
+        AlbumMenuTest.run(this);
         getLogger().info("TAROT SELFTEST PASS: full/four/five free slots; stack16+48 and17+48; no mutation on reject;110 cards; legacy and V3.0.0 migration; vanilla paper fallback.");
     }
 }
