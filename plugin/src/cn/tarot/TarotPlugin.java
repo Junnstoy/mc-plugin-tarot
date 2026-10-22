@@ -228,6 +228,7 @@ public final class TarotPlugin extends JavaPlugin implements Listener, CommandEx
     // Do not synthesize an upgrade in a cancelled InventoryDragEvent: Minecraft
     // restores its pre-event cursor afterwards, which could retain the material.
     ItemStack migrateItem(ItemStack item) {
+        if(albums!=null&&albums.isAlbum(item))return albums.migrateAppearance(item);
         if(item==null||item.getType()!=Material.PAPER)return item;
         if(tarot(item)){
             int id=cardId(item);String model=id>0?"card_"+id+"_"+value(item,levelKey):packageType(item);

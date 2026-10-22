@@ -24,6 +24,7 @@ final class AlbumServiceTest {
         try {
             root = Files.createTempDirectory(plugin.getDataFolder().toPath(), "tarot-album-selftest-").toAbsolutePath().normalize();
             persistence(plugin, root.resolve("persistence"));
+            appearance(plugin, root.resolve("appearance"));
             transactions(plugin, root.resolve("transactions"));
             effects(plugin, root.resolve("effects"));
             restartPersistence(plugin);
@@ -44,6 +45,26 @@ final class AlbumServiceTest {
                 } catch (IOException ex) { plugin.getLogger().warning("Could not clean album test directory: " + ex.getMessage()); }
             }
         }
+    }
+    private static void appearance(TarotPlugin plugin,Path directory){
+        AlbumService service=new AlbumService(plugin,new AlbumStore(directory));
+        ItemStack fresh=service.makeAlbum();
+        check(fresh.getType()==Material.BUNDLE&&!fresh.getItemMeta().hasItemModel(),"album retains vanilla bundle model");
+        check(fresh.getItemMeta().getCustomModelDataComponent().getStrings().equals(List.of("tarot:album")),"album artwork selector");
+        check(service.migrateAppearance(fresh)==fresh,"current appearance is idempotent");
+        ItemStack legacy=fresh.clone();var meta=legacy.getItemMeta();
+        meta.setCustomModelDataComponent(null);meta.displayName(Component.text("My original album"));
+        meta.getPersistentDataContainer().set(new NamespacedKey("test","kept"),PersistentDataType.STRING,"unchanged");
+        legacy.setItemMeta(meta);ItemStack upgraded=service.migrateAppearance(legacy);
+        check(upgraded!=legacy&&service.isAlbum(upgraded),"legacy album migrates");
+        check(upgraded.getItemMeta().displayName().equals(meta.displayName()),"custom name preserved");
+        check(upgraded.getItemMeta().getPersistentDataContainer().equals(meta.getPersistentDataContainer()),"album identity and other metadata preserved");
+        check(legacy.getItemMeta().getCustomModelDataComponent().getStrings().isEmpty(),"input album is unchanged");
+        check(service.migrateAppearance(upgraded)==upgraded,"migrated appearance is idempotent");
+        ItemStack plain=new ItemStack(Material.BUNDLE);check(service.migrateAppearance(plain)==plain,"ordinary bundles untouched");
+        Fixture f=new Fixture();f.storage.setItem(0,legacy);service.refresh(f.player);
+        check(f.storage.getItem(0).equals(upgraded),"carried legacy album refreshed automatically");
+        check(service.progress(f.player).isEmpty(),"appearance refresh does not create collection entries");
     }
     private static void restartPersistence(TarotPlugin plugin) throws IOException {
         String configured=System.getProperty("tarot.validation.album-dir");

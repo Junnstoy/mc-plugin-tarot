@@ -13,6 +13,7 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.*;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 /** Personal, withdrawable collections. The bundle is an access key, never the storage. */
@@ -51,6 +52,7 @@ final class AlbumService implements Listener {
     ItemStack makeAlbum(){
         ItemStack item=new ItemStack(Material.BUNDLE);var meta=item.getItemMeta();
         meta.getPersistentDataContainer().set(albumKey,PersistentDataType.BYTE,(byte)1);
+        albumAppearance(meta);
         meta.itemName(text("彩虹塔罗 · 个人收集册",0xb478ff));
         meta.setEnchantmentGlintOverride(true);
         meta.lore(List.of(text("右键打开 · 22 张牌 × 5 星",0x80ddff),
@@ -58,6 +60,26 @@ final class AlbumService implements Listener {
             text("随身携带：数量奖励、羁绊与跟随特效",0xffdc70),
             text("个人收藏跟随玩家保存，多本不叠加",0xbebed2)));
         item.setItemMeta(meta);return item;
+    }
+    private static void albumAppearance(ItemMeta meta){
+        // Keep the vanilla bundle model. The resource pack selects only our
+        // tagged album, preserving normal bundles and the no-pack fallback.
+        meta.setItemModel(null);
+        var modelData=meta.getCustomModelDataComponent();modelData.setStrings(List.of("tarot:album"));
+        meta.setCustomModelDataComponent(modelData);
+    }
+    ItemStack migrateAppearance(ItemStack item){
+        if(!isAlbum(item))return item;
+        var meta=item.getItemMeta();
+        if((!meta.hasItemModel()||NamespacedKey.minecraft("bundle").equals(meta.getItemModel()))&&
+                meta.getCustomModelDataComponent().getStrings().equals(List.of("tarot:album")))return item;
+        ItemStack updated=item.clone();albumAppearance(meta);updated.setItemMeta(meta);return updated;
+    }
+    private void migrateCarriedAlbums(Player p){
+        for(int slot=0;slot<p.getInventory().getSize();slot++){
+            ItemStack previous=p.getInventory().getItem(slot),next=migrateAppearance(previous);
+            if(next!=previous)p.getInventory().setItem(slot,next);
+        }
     }
     boolean isAlbum(ItemStack item){return item!=null&&item.getType()==Material.BUNDLE&&item.hasItemMeta()&&
         item.getItemMeta().getPersistentDataContainer().has(albumKey,PersistentDataType.BYTE);}
@@ -78,6 +100,7 @@ final class AlbumService implements Listener {
         open(p,1);return true;
     }
     void open(Player p,int star){
+        migrateCarriedAlbums(p);
         if(!hasAlbum(p)){tell(p,"请先将收集册放进背包。");return;}
         if(profile(p)==null)return;menu.open(p,star);
     }
@@ -164,6 +187,7 @@ final class AlbumService implements Listener {
     }
     void refresh(Player p){
         if(p.isDead())return;
+        migrateCarriedAlbums(p);
         List<AlbumRules.Bonus> next=hasAlbum(p)?AlbumRules.totals(progress(p)):List.of();
         if(Objects.equals(applied.get(p.getUniqueId()),next))return;
         remove(p);
