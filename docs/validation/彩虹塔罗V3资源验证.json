@@ -1,0 +1,226 @@
+{
+  "item_definitions": 135,
+  "card_variants": 110,
+  "legacy_aliases": 22,
+  "package_models": 3,
+  "unresolved_references": 0,
+  "verified_against_local_client": "E:\\Minecraft\\.minecraft\\versions\\26.3-Fabric 0.19.5\\26.3-Fabric 0.19.5.jar",
+  "client_version": "26.3",
+  "resource_format": [
+    97,
+    1
+  ],
+  "runtime_client_render_tested": false,
+  "artwork": [
+    {
+      "index": 0,
+      "file": "assets/tarot/textures/item/card_1.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "4de8ec164e16cf25833dd76e8f690dda3f97e424c02624213e1d816f25547849",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 1,
+      "file": "assets/tarot/textures/item/card_2.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "50c76cd95a1cbe7ca4c920c03b407620d242f71a4f6a02f8c37c6599f6d7a0ee",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 2,
+      "file": "assets/tarot/textures/item/card_3.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "72059ffc27864977ce374446a0a5e384e97259b44919269dc3055925ebd2a498",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 3,
+      "file": "assets/tarot/textures/item/card_4.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "1552494f0ee44da3bcf5ddea662b2a16b1b4e917a641f1f0cda196efe0c51ea1",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 4,
+      "file": "assets/tarot/textures/item/card_5.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "944eea750666b945d0b1eca787693d954156c43723b551287cd1ce7ab7a7cd87",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 5,
+      "file": "assets/tarot/textures/item/card_6.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "2515dc349e50d7a0d6c29dfbccf9a58be4c30bbe193f812cfd57b3be09b77e24",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 6,
+      "file": "assets/tarot/textures/item/card_7.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "b419f027b29950bc17ebf0d1473784fc7fcd0a4b2b69a6d5534415fe244d3232",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 7,
+      "file": "assets/tarot/textures/item/card_8.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "cbde24d886e87f3573cfa247a0db25c5f45ef9b4324b96a9df3b120193a35a82",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 8,
+      "file": "assets/tarot/textures/item/card_9.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "4ffa294d8463aed3a061004c57c88d0dfe1e3b740880854a02a618fbf23629f5",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 9,
+      "file": "assets/tarot/textures/item/card_10.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "71d1fe8e7b0136120e334f4834369a336beac4d834093cf0bb4b1fadc8266797",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 10,
+      "file": "assets/tarot/textures/item/card_11.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "4d9248245dcd4d7c8a84198e90f8cc2a3864d706ea501fc55dd98f26e9be1b0e",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 11,
+      "file": "assets/tarot/textures/item/card_12.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "587e66d3757e196162307828170ed6788046549791d28a84d04c0bb785708339",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 12,
+      "file": "assets/tarot/textures/item/card_13.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "99c6f40a501ca01eacc8b30530c58aee689ef090ddbd5a97e2f442561de20f2b",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 13,
+      "file": "assets/tarot/textures/item/card_14.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "fd85ca9a95cb80fec324f3f3824ea88b458adc15d24229fa781f6e451ed95c4d",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 14,
+      "file": "assets/tarot/textures/item/card_15.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "d2e4c0d94d03f8b5abbe5e0ed072fce658a1935a1458214957c90c8422e5624a",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 15,
+      "file": "assets/tarot/textures/item/card_16.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "6da158ece2710a0d53acddb0e92ff9dcc38195fc4f071db2b700002cecaae048",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 16,
+      "file": "assets/tarot/textures/item/card_17.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "0ec61fe8991600577657efaabe8c2d1350a1ff96495b8e2add1da6e6fd3c4d32",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 17,
+      "file": "assets/tarot/textures/item/card_18.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "1b23bf564ba1ad862b37bc9c508e1fb97fef5a428819911e319eb6d30f72fc20",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 18,
+      "file": "assets/tarot/textures/item/card_19.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "ba8324abb308159b853018b41f2f905453a2bb3728581e7da985c63378841dac",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 19,
+      "file": "assets/tarot/textures/item/card_20.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "f48f7f6f05eca8e9f19be2f9fab27f7e2a0fa80840b67d0d76452f56a88c60dc",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 20,
+      "file": "assets/tarot/textures/item/card_21.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "d049861e106f0e3718f8226cbe683808951b1b4484bc285a8241891e73f862b8",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 21,
+      "file": "assets/tarot/textures/item/card_22.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "455fe0f51a436084dbaf6a091a4ed881d102c82184b2b31478ad2135c3be7cc0",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 22,
+      "file": "assets/tarot/textures/item/pack.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "9e2bb0dbf42d2b4a2503c55a18dc5894d08aa8fb661d7d539a8d9de47c390b94",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 23,
+      "file": "assets/tarot/textures/item/box.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "a2ad556e40ee263bab7036aaaa7288e3ba57493b4c1b0883c3ac108c2ed95745",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 24,
+      "file": "assets/tarot/textures/item/case.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "9eef53f199c5a0fa6288aa25ec8b4858da930bb6522c83322a92d624ba279c46",
+      "unchanged_from_imagegen": true
+    },
+    {
+      "index": 25,
+      "file": "assets/minecraft/textures/mob_effect/luck.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "bec3f20ef809d34d90b2cd8de73430b02497355b926a9b91e650223adab26f2a",
+      "unchanged_from_imagegen": true
+    }
+  ],
+  "zip_sha1": "cda676edd8a45d982416668e519d55f5dbfdebed",
+  "zip_bytes": 43630639
+}

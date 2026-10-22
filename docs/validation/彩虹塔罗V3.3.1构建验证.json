@@ -1,0 +1,16 @@
+{
+  "version": "3.3.1",
+  "jar_bytes": 207464,
+  "sha256": "fdd9c8ce01f8720c2d1bb1b947960e9cc0bd8f3686482bd27a611afb4bb1c5cc",
+  "source_bytes": 107268,
+  "resource_pack_changed": false,
+  "zip_integrity_passed": true,
+  "tested_jar_matches_delivered_jar": true,
+  "aura_assertions": 195330,
+  "cast_assertions": 30689,
+  "activation_state_checks_per_boot": 51,
+  "actual_paper_native_completion_passed": true,
+  "paper": "26.3-143",
+  "restart_passed": true,
+  "real_client_verified": false
+}

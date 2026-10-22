@@ -1,0 +1,45 @@
+{
+  "version": "3.1.1",
+  "client_version": "26.3",
+  "resource_format": [
+    97,
+    1
+  ],
+  "verified_against_local_client": "E:\\Minecraft\\.minecraft\\versions\\26.3-Fabric 0.19.5\\26.3-Fabric 0.19.5.jar",
+  "base_pack": "tarot_resources_rainbow_v3_0_1",
+  "base_files_preserved_byte_for_byte": 276,
+  "item_definitions": 138,
+  "card_variants": 110,
+  "legacy_card_aliases": 22,
+  "package_models": 3,
+  "paper_selector_cases": 113,
+  "paper_selector_unchanged": true,
+  "album_selector_cases": 1,
+  "album_selector_value": "tarot:album",
+  "custom_model_data_string_index": 0,
+  "album_unloaded_pack_model": "minecraft:bundle",
+  "ordinary_bundle_fallback_exactly_matches_vanilla": true,
+  "native_bundle_open_selected_item_states_preserved": true,
+  "unresolved_references": 0,
+  "runtime_client_render_tested": false,
+  "album_artwork": {
+    "source": "outputs/album_art_v3_1_1.png",
+    "file": "assets/tarot/textures/item/album.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha_extrema": [
+      0,
+      255
+    ],
+    "transparent_pixels": 482553,
+    "opaque_pixels": 1998,
+    "sha256": "d3784c33d4e60b66fc66d8ef948a789b35370e0a8f23df202874a76b1ad69246",
+    "unchanged_from_imagegen": true
+  },
+  "zip_crc_valid": true,
+  "zip_entries": 281,
+  "zip_sha1": "f72d0e3b32e8bb9b519af40edcd459ae6f2a34df",
+  "zip_sha256": "13c9637103663e488d2781a6c741b60b5d0caadd6faef1e35790b6fefb7456e3",
+  "zip_bytes": 44866678
+}

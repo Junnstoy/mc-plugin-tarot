@@ -1,0 +1,32 @@
+[
+  {
+    "run": 1,
+    "ready": true,
+    "selftest_passed": true,
+    "upgrade_events_passed": true,
+    "album_service_passed": true,
+    "album_menu_passed": true,
+    "timestamps_preserved": true,
+    "expired_state_removed": true,
+    "exit_code": 0,
+    "album_menu_deferred_passed": true,
+    "album_restart_passed": true,
+    "command_events_passed": true,
+    "independent_cooldown_preserved": true
+  },
+  {
+    "run": 2,
+    "ready": true,
+    "selftest_passed": true,
+    "upgrade_events_passed": true,
+    "album_service_passed": true,
+    "album_menu_passed": true,
+    "timestamps_preserved": true,
+    "expired_state_removed": true,
+    "exit_code": 0,
+    "album_menu_deferred_passed": true,
+    "album_restart_passed": true,
+    "command_events_passed": true,
+    "independent_cooldown_preserved": true
+  }
+]
