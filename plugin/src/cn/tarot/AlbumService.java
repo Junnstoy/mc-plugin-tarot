@@ -16,7 +16,7 @@ import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-/** Personal, withdrawable collections. The bundle is an access key, never the storage. */
+/** Personal, withdrawable collections. The bundle enables rewards, never stores cards. */
 final class AlbumService implements Listener {
     private final TarotPlugin plugin;
     private final AlbumStore store;
@@ -58,7 +58,8 @@ final class AlbumService implements Listener {
         meta.lore(List.of(text("右键打开 · 22 张牌 × 5 星",0x80ddff),
             text("卡牌可取回；仅存入的卡计入收藏",0x8fffb2),
             text("随身携带：数量奖励、羁绊与跟随特效",0xffdc70),
-            text("个人收藏跟随玩家保存，多本不叠加",0xbebed2)));
+            text("/tarot album 随时打开自己的收藏",0xbebed2),
+            text("收藏跟随玩家保存；随身仅保留一本",0xbebed2)));
         item.setItemMeta(meta);return item;
     }
     private static void albumAppearance(ItemMeta meta){
@@ -75,11 +76,39 @@ final class AlbumService implements Listener {
                 meta.getCustomModelDataComponent().getStrings().equals(List.of("tarot:album")))return item;
         ItemStack updated=item.clone();albumAppearance(meta);updated.setItemMeta(meta);return updated;
     }
-    private void migrateCarriedAlbums(Player p){
+    /** Inventory wins over cursor. A transferred token never changes either player's saved collection. */
+    boolean reconcileAlbums(Player p){
+        boolean retained=false;
         for(int slot=0;slot<p.getInventory().getSize();slot++){
-            ItemStack previous=p.getInventory().getItem(slot),next=migrateAppearance(previous);
+            ItemStack previous=p.getInventory().getItem(slot);
+            if(!isAlbum(previous))continue;
+            ItemStack next=retained?withoutToken(previous):singleAlbum(previous);
             if(next!=previous)p.getInventory().setItem(slot,next);
+            retained=true;
         }
+        ItemStack cursor=p.getItemOnCursor();
+        if(isAlbum(cursor)){
+            ItemStack next=retained?withoutToken(cursor):singleAlbum(cursor);
+            if(next!=cursor)p.setItemOnCursor(next);
+            retained=true;
+        }
+        return retained;
+    }
+    private ItemStack singleAlbum(ItemStack item){
+        ItemStack next=migrateAppearance(item);
+        if(next.getAmount()!=1){next=next.clone();next.setAmount(1);}
+        return next;
+    }
+    /** Legacy/tampered bundles may contain vanilla items: preserve those as an ordinary bundle. */
+    private ItemStack withoutToken(ItemStack item){
+        if(!(item.getItemMeta() instanceof org.bukkit.inventory.meta.BundleMeta bundle)||!bundle.hasItems())return null;
+        ItemStack preserved=item.clone();
+        bundle.getPersistentDataContainer().remove(albumKey);
+        bundle.setItemModel(null);
+        var data=bundle.getCustomModelDataComponent();
+        data.setStrings(data.getStrings().stream().filter(s->!s.equals("tarot:album")).toList());
+        bundle.setCustomModelDataComponent(data);preserved.setItemMeta(bundle);
+        return preserved;
     }
     boolean isAlbum(ItemStack item){return item!=null&&item.getType()==Material.BUNDLE&&item.hasItemMeta()&&
         item.getItemMeta().getPersistentDataContainer().has(albumKey,PersistentDataType.BYTE);}
@@ -92,16 +121,16 @@ final class AlbumService implements Listener {
         return true;
     }
     boolean giveOrOpen(Player p){
-        if(!hasAlbum(p)){
-            ItemStack[] next=InventoryPlan.deposit(p.getInventory().getStorageContents(),List.of(makeAlbum()));
-            if(next==null){tell(p,"背包空间不足，请腾出一格再领取。");return false;}
-            p.getInventory().setStorageContents(next);
-        }
         open(p,1);return true;
     }
+    boolean giveAlbum(Player p){
+        if(reconcileAlbums(p)){refresh(p);return true;}
+        ItemStack[] next=InventoryPlan.deposit(p.getInventory().getStorageContents(),List.of(makeAlbum()));
+        if(next==null){tell(p,"背包空间不足，请腾出一格再领取。");return false;}
+        p.getInventory().setStorageContents(next);refresh(p);return true;
+    }
     void open(Player p,int star){
-        migrateCarriedAlbums(p);
-        if(!hasAlbum(p)){tell(p,"请先将收集册放进背包。");return;}
+        reconcileAlbums(p);
         if(profile(p)==null)return;menu.open(p,star);
     }
     private AlbumStore.Data profile(Player p){
@@ -132,7 +161,6 @@ final class AlbumService implements Listener {
         return id==0?-1:AlbumRules.index(id,plugin.cardLevel(card));
     }
     private boolean canEdit(Player p){
-        if(!hasAlbum(p)){tell(p,"收集册已离开背包，无法存取。");return false;}
         if(p.getGameMode()!=GameMode.SURVIVAL&&p.getGameMode()!=GameMode.ADVENTURE){
             tell(p,"请在生存或冒险模式中存入、取出卡牌。");return false;}
         return true;
@@ -187,7 +215,7 @@ final class AlbumService implements Listener {
     }
     void refresh(Player p){
         if(p.isDead())return;
-        migrateCarriedAlbums(p);
+        reconcileAlbums(p);
         List<AlbumRules.Bonus> next=hasAlbum(p)?AlbumRules.totals(progress(p)):List.of();
         if(Objects.equals(applied.get(p.getUniqueId()),next))return;
         remove(p);
@@ -231,9 +259,21 @@ final class AlbumService implements Listener {
     @EventHandler public void respawn(PlayerRespawnEvent e){Bukkit.getScheduler().runTaskLater(plugin,()->{if(e.getPlayer().isOnline())restore(e.getPlayer());},3);}
     @EventHandler public void quit(PlayerQuitEvent e){Player p=e.getPlayer();remove(p);clamp(p);profiles.remove(p.getUniqueId());failed.remove(p.getUniqueId());gestures.remove(p.getUniqueId());}
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void drop(PlayerDropItemEvent e){later(e.getPlayer());}
-    @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void pickup(EntityPickupItemEvent e){if(e.getEntity() instanceof Player p)later(p);}
+    @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true) public void pickup(EntityPickupItemEvent e){
+        if(!(e.getEntity() instanceof Player p))return;
+        ItemStack incoming=e.getItem().getItemStack();
+        if(isAlbum(incoming)){
+            if(reconcileAlbums(p)){
+                e.setCancelled(true);
+                ItemStack preserved=withoutToken(incoming);
+                if(preserved==null)e.getItem().remove();else e.getItem().setItemStack(preserved);
+            }else e.getItem().setItemStack(singleAlbum(incoming));
+        }
+        later(p);
+    }
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void swap(PlayerSwapHandItemsEvent e){later(e.getPlayer());}
     @EventHandler public void close(InventoryCloseEvent e){if(e.getPlayer() instanceof Player p)later(p);}
+    @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true) public void drag(InventoryDragEvent e){if(e.getWhoClicked() instanceof Player p)later(p);}
     @EventHandler(priority=EventPriority.LOW,ignoreCancelled=true) public void bundleClick(InventoryClickEvent e){
         if(!(e.getWhoClicked() instanceof Player p))return;
         ItemStack cursor=e.getCursor(),target=e.getCurrentItem();

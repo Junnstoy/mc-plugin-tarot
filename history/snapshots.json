@@ -2308,5 +2308,36 @@
         }
       }
     ]
+  },
+  {
+    "tag": "v3.2.0",
+    "description": "重整指令、个人收藏数据与唯一收集册",
+    "sources": [
+      {
+        "archive": "TarotRainbow-3.2.0-source.zip",
+        "archive_sha256": "f4a831b818c6020b30f66af78f37ea4b0cdb75bd4de1a7c1d92770439bd51145",
+        "target": "plugin",
+        "files": {
+          "src/cn/tarot/AlbumMenu.java": "593ec8d0e55f1a3a3d30f1a4ae62d4e2acdd0bbfb78f37d1a3c1e53e7981d6fa",
+          "src/cn/tarot/AlbumMenuTest.java": "50fc955b25528b967f982eb9396c6609193cc031e9645f6e84e2f7a7ea85aa8f",
+          "src/cn/tarot/AlbumRules.java": "d54e451cf12ef1de253891e3155b9b1441074529fcaab7be0c964f276d95ebdb",
+          "src/cn/tarot/AlbumRulesTest.java": "67e43a5fc5c2c6074cb2a8ee447b86df97aa18b76917b0d0ea2a730428bbb0cb",
+          "src/cn/tarot/AlbumService.java": "bf1d88138dd1e869a3a6885de2c71f2dc16d9c6711ee6340d33ad7e9b14ecf92",
+          "src/cn/tarot/AlbumServiceTest.java": "8e27f60946e5168f57263c432e2213e3b373d8cf390b85de1e00bd7465496f26",
+          "src/cn/tarot/AlbumStore.java": "025708f96c8cb2f4b47556656ebcc36e3da579902e58fec09259a85838fd4675",
+          "src/cn/tarot/CommandEventTest.java": "ca2a73c208efca68d894f437d60aefbf455b85203bbc881992351121d5a1c4bd",
+          "src/cn/tarot/Core.java": "277be9eb5bf12962afd968210800892bfc00f027298fc5b32db2940f0607f9e0",
+          "src/cn/tarot/CoreTest.java": "f7ecbadb187dff1e994bbbb45ff05bb74f20f706edcab9f4af4508ddbb8b0769",
+          "src/cn/tarot/InventoryPlan.java": "ba77de88a25ad2097e1a0395ffcfd6c806ac523fcc5532c7fe1fa3ac787d8d1e",
+          "src/cn/tarot/TarotCommand.java": "4f350ddbf6ef25869e7e4a21dd990c82fd8126875edb4956187c4c02555d64f8",
+          "src/cn/tarot/TarotCommandTest.java": "271562148e4850fb168c1dff45a57a751352010c0f859489fc526b1553423a4e",
+          "src/cn/tarot/TarotPlugin.java": "f14f9b986ce507757b258026719f7872056a08d336b8155e444b8f54e27416b5",
+          "src/cn/tarot/UpgradeEventTest.java": "f9a703fa3eb9f15a6c63cc98543377ac72b6cb73447ff2646259a4cb58a26b6a",
+          "resources/config.yml": "735e1b43f09c5668c03f4af868cb7417f7a3c83009fbf1a62384236f12633ff2",
+          "resources/plugin.yml": "56ac2e9bac14b94c02362116be4323b558df618938e1ce579361756c6e3d29eb",
+          "build.ps1": "30a9e66f19b4df331685554b46ce906fb819337b09fa78876c6b79352cda7e81"
+        }
+      }
+    ]
   }
 ]

@@ -41,6 +41,9 @@ final class AlbumMenuTest {
         Fixture f = new Fixture();
         Bukkit.getPluginManager().registerEvents(menu, plugin);
         try {
+            for(int i=0;i<3;i++)service.giveOrOpen(f.player);
+            check(AlbumMenu.isAlbumView(f.view)&&Arrays.stream(f.storage.getContents()).allMatch(AlbumMenuTest::empty),
+                "album command opens directly without creating any item");
             f.storage.setItem(0, service.makeAlbum());
             menu.open(f.player, 1);
             check(AlbumMenu.isAlbumView(f.view), "album view holder");
@@ -117,10 +120,12 @@ final class AlbumMenuTest {
             f.cursor = new ItemStack(Material.AIR);
 
             f.storage.setItem(0, null);
-            ItemStack[] beforeMissing = copy(f.storage.getContents());
             dispatch(f.click(1, ClickType.LEFT), menu, plugin);
-            check(service.progress(f.player).get(1) && Arrays.equals(beforeMissing, f.storage.getContents()),
-                "lost album blocks further withdrawal");
+            check(!service.progress(f.player).get(1) && plugin.cardId(f.storage.getItem(0))==2,
+                "withdrawal remains available after dropping physical album");
+            check(service.depositSlot(f.player,0),"personal card can be returned without album");
+            service.giveOrOpen(f.player);
+            check(empty(f.storage.getItem(0)),"reopening after dropping does not mint another album");
             f.storage.setItem(0, service.makeAlbum());
             f.mode = GameMode.CREATIVE;
             InventoryCreativeEvent creative = new InventoryCreativeEvent(f.view, InventoryType.SlotType.CONTAINER,
@@ -142,7 +147,7 @@ final class AlbumMenuTest {
             });
             plugin.getLogger().info("TAROT ALBUM MENU SELFTEST PASS: " + guarded
                 + " forbidden click variants; bottom merge/drag/creative guarded; shift/cursor deposit; full withdrawal"
-                + " preserved; original metadata restored; album carry check. Synthetic player, isolated store.");
+                + " preserved; original metadata restored; command opens without issuing items. Synthetic player, isolated store.");
         } finally {
             HandlerList.unregisterAll(menu);
             // Delete only this test's exact UUID file and directory; never touch live collection files.

@@ -49,10 +49,6 @@ public final class AlbumMenu implements Listener {
 
     public void open(Player player, int star) {
         if (!player.isOnline() || player.isDead()) return;
-        if (!service.hasAlbum(player)) {
-            tell(player, "请将塔罗收集册放在随身背包或副手中，再打开收集册。");
-            return;
-        }
         if (player.getGameMode() != GameMode.SURVIVAL && player.getGameMode() != GameMode.ADVENTURE) {
             tell(player, "请在生存或冒险模式下存取收集册，避免创造背包复制卡牌。");
             return;
@@ -121,7 +117,8 @@ public final class AlbumMenu implements Listener {
         }
         List<String> rewards = new ArrayList<>();
         rewards.add("只统计存入册中的卡牌，每个同名同星计一次");
-        rewards.add("随身携带生效；多个收集册共享个人收藏，不叠加奖励");
+        rewards.add(service.hasAlbum(player) ? "正在携带收集册，收藏奖励生效" : "未携带收集册，收藏奖励暂停；存取不受影响");
+        rewards.add("随身仅保留一本；每位玩家只查看自己的收藏");
         rewards.add(" ");
         for (AlbumRules.Milestone milestone : AlbumRules.MILESTONES) {
             rewards.add((AlbumRules.count(progress) >= milestone.required() ? "✓ " : "○ ")
@@ -159,7 +156,8 @@ public final class AlbumMenu implements Listener {
                 "当前特效：" + (tier == 6 ? "110 种全收集 · 最终彩虹" : tier == 0 ? "尚未解锁" : "第 " + tier + " 档"),
                 "需随身携带收集册；取回卡牌后即时重算")));
         inventory.setItem(53, icon(Material.BARRIER, "关闭收集册", TEXT,
-            List.of("Shift + 左键背包卡牌：存入", "左键册中卡牌：取回", "收集册只打开自己的收藏，遗失册子不会删除收藏")));
+            List.of("Shift + 左键背包卡牌：存入", "左键册中卡牌：取回", "/tarot album 随时打开，不额外领取物品",
+                "收集册只打开自己的收藏，遗失册子不会删除收藏")));
     }
 
     private static String number(double value) {
@@ -174,7 +172,7 @@ public final class AlbumMenu implements Listener {
     }
 
     private boolean validate(Player player, Holder holder) {
-        if (!holder.owner.equals(player.getUniqueId()) || !service.hasAlbum(player)
+        if (!holder.owner.equals(player.getUniqueId())
                 || player.isDead() || (player.getGameMode() != GameMode.SURVIVAL && player.getGameMode() != GameMode.ADVENTURE)) {
             next(player, holder, player::closeInventory);
             return false;

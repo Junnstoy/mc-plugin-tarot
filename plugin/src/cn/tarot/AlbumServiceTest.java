@@ -10,6 +10,8 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.attribute.*;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Item;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.*;
 import org.bukkit.persistence.PersistentDataType;
@@ -25,11 +27,13 @@ final class AlbumServiceTest {
             root = Files.createTempDirectory(plugin.getDataFolder().toPath(), "tarot-album-selftest-").toAbsolutePath().normalize();
             persistence(plugin, root.resolve("persistence"));
             appearance(plugin, root.resolve("appearance"));
+            uniqueness(plugin, root.resolve("uniqueness"));
             transactions(plugin, root.resolve("transactions"));
             effects(plugin, root.resolve("effects"));
             restartPersistence(plugin);
             plugin.getLogger().info("TAROT ALBUM SERVICE SELFTEST PASS: " + checks
                 + " assertions; 110 metadata-preserving save/load pairs; full-inventory withdrawal;"
+                + " unique inventory/offhand/cursor tokens; pickup deduplication; UUID-isolated transfer;"
                 + " duplicate rejection; deposit/withdraw save-failure rollback; carry-gated bonuses;"
                 + " withdrawal downgrade; health preserved while changing bonuses; malformed-data rejection.");
         } catch (IOException ex) {
@@ -45,6 +49,67 @@ final class AlbumServiceTest {
                 } catch (IOException ex) { plugin.getLogger().warning("Could not clean album test directory: " + ex.getMessage()); }
             }
         }
+    }
+    private static void uniqueness(TarotPlugin plugin,Path directory) throws IOException {
+        AlbumStore store=new AlbumStore(directory);AlbumService service=new AlbumService(plugin,store);
+        Fixture first=new Fixture(),second=new Fixture();
+        first.fill();ItemStack[] full=copy(first.storage.getContents());
+        check(!service.giveAlbum(first.player),"full inventory rejects initial album grant");
+        check(Arrays.equals(full,first.storage.getContents()),"failed grant preserves all inventory items");
+        first.storage.clear();
+        check(service.giveAlbum(first.player)&&albumCount(service,first)==1,"first grant provides one token");
+        ItemStack[] granted=copy(first.storage.getContents());
+        check(service.giveAlbum(first.player)&&Arrays.equals(granted,first.storage.getContents()),"repeat grant is idempotent");
+        ItemStack stack=service.makeAlbum();stack.setAmount(7);first.storage.setItem(0,stack);
+        first.storage.setItem(10,service.makeAlbum());first.extra[4]=service.makeAlbum();first.cursor=service.makeAlbum();
+        ItemStack unrelated=plugin.makeCard(22,5);first.storage.setItem(20,unrelated.clone());
+        service.reconcileAlbums(first.player);
+        check(albumCount(service,first)==1&&first.storage.getItem(0).getAmount()==1,"duplicates and illegal stacks collapse to one");
+        check(empty(first.extra[4])&&empty(first.cursor),"offhand and cursor duplicates removed");
+        check(unrelated.equals(first.storage.getItem(20)),"deduplication preserves unrelated items");
+        first.storage.clear();first.extra[4]=service.makeAlbum();
+        check(service.giveAlbum(first.player)&&albumCount(service,first)==1&&empty(first.storage.getItem(0)),"offhand token prevents extra grant");
+        first.extra[4]=null;first.cursor=service.makeAlbum();
+        check(service.giveAlbum(first.player)&&albumCount(service,first)==1&&empty(first.storage.getItem(0)),"cursor token prevents extra grant");
+        first.cursor=null;first.storage.setItem(0,service.makeAlbum());
+        ItemStack filled=service.makeAlbum();var bundle=(org.bukkit.inventory.meta.BundleMeta)filled.getItemMeta();
+        bundle.setItems(List.of(new ItemStack(Material.DIAMOND,3)));filled.setItemMeta(bundle);
+        first.storage.setItem(1,filled);ItemStack ordinary=new ItemStack(Material.BUNDLE);first.storage.setItem(2,ordinary.clone());
+        service.reconcileAlbums(first.player);
+        check(!service.isAlbum(first.storage.getItem(1))&&((org.bukkit.inventory.meta.BundleMeta)first.storage.getItem(1).getItemMeta()).getItems().equals(bundle.getItems()),
+            "duplicate native bundle contents preserved in ordinary bundle");
+        check(ordinary.equals(first.storage.getItem(2)),"ordinary bundle untouched");
+        PickupFixture excess=new PickupFixture(service.makeAlbum());
+        EntityPickupItemEvent event=new EntityPickupItemEvent(first.player,excess.item,0);service.pickup(event);
+        check(event.isCancelled()&&excess.removed&&albumCount(service,first)==1,"picking up extra empty token removes only excess");
+        PickupFixture fullBundle=new PickupFixture(filled);event=new EntityPickupItemEvent(first.player,fullBundle.item,0);service.pickup(event);
+        check(event.isCancelled()&&!fullBundle.removed&&!service.isAlbum(fullBundle.stack)
+            &&((org.bukkit.inventory.meta.BundleMeta)fullBundle.stack.getItemMeta()).getItems().equals(bundle.getItems()),"pickup preserves native bundle contents");
+
+        first.storage.setItem(3,plugin.makeCard(1,1));second.storage.setItem(3,plugin.makeCard(2,2));
+        check(service.depositSlot(first.player,3)&&service.depositSlot(second.player,3),"both players can store cards without sharing contents");
+        ItemStack dropped=first.storage.getItem(0).clone();first.storage.setItem(0,null);service.refresh(first.player);
+        PickupFixture transfer=new PickupFixture(dropped);event=new EntityPickupItemEvent(second.player,transfer.item,0);service.pickup(event);
+        check(!event.isCancelled()&&!transfer.removed,"recipient without token can pick up transferred album");
+        second.storage.setItem(0,transfer.stack);service.refresh(second.player);
+        check(service.progress(first.player).cardinality()==1&&service.progress(first.player).get(0),"dropping token preserves original player's collection");
+        check(service.progress(second.player).cardinality()==1&&service.progress(second.player).get(AlbumRules.index(2,2)),"recipient sees only their own collection");
+        check(store.load(first.uuid).cards[0]!=null&&store.load(second.uuid).cards[0]==null,"transfer leaves UUID saves separate");
+        check(service.giveAlbum(first.player)&&service.giveAlbum(second.player)&&albumCount(service,first)==1&&albumCount(service,second)==1,
+            "grants after transfer keep each player's physical token unique");
+    }
+    private static int albumCount(AlbumService service,Fixture fixture){
+        int count=0;for(ItemStack item:fixture.inventory.getContents())if(service.isAlbum(item))count+=item.getAmount();
+        if(service.isAlbum(fixture.cursor))count+=fixture.cursor.getAmount();return count;
+    }
+    private static final class PickupFixture {
+        ItemStack stack;boolean removed;final Item item;
+        PickupFixture(ItemStack stack){this.stack=stack.clone();item=proxy(Item.class,(object,method,args)->switch(method.getName()){
+            case "getItemStack"->this.stack;
+            case "setItemStack"->{this.stack=((ItemStack)args[0]).clone();yield null;}
+            case "remove"->{removed=true;yield null;}
+            default->objectMethod(object,method.getName(),args);
+        });}
     }
     private static void appearance(TarotPlugin plugin,Path directory){
         AlbumService service=new AlbumService(plugin,new AlbumStore(directory));
@@ -201,7 +266,7 @@ final class AlbumServiceTest {
         check(Arrays.equals(before, f.storage.getContents()), "creative rejection preserves inventory");
         f.mode = GameMode.SURVIVAL;
         f.storage.setItem(35, null);
-        check(!service.depositSlot(f.player, 1) && !service.withdraw(f.player, 0), "album required for edits");
+        check(service.depositSlot(f.player, 1) && service.withdraw(f.player, 0), "personal storage works without a physical token");
     }
     private static void effects(TarotPlugin plugin, Path directory) throws IOException {
         AlbumStore store = new AlbumStore(directory);
@@ -218,6 +283,7 @@ final class AlbumServiceTest {
         f.storage.setItem(34, service.makeAlbum());
         service.refresh(f.player);
         close(f.attributes.get(Attribute.MAX_HEALTH).value(), 21.2, "multiple albums cannot stack bonuses");
+        check(albumCount(service,f)==1,"bonus refresh removes duplicate albums");
         f.health = 21.2;
         f.storage.setItem(0, plugin.makeCard(12, 1));
         check(service.depositSlot(f.player, 0), "new bond card accepted");
@@ -271,6 +337,7 @@ final class AlbumServiceTest {
     }
     private static final class Fixture {
         final Inventory storage = Bukkit.createInventory(null, 36);
+        final ItemStack[] extra=new ItemStack[5];
         final UUID uuid = UUID.randomUUID();
         final List<String> messages = new ArrayList<>();
         final Map<Attribute, AttributeState> attributes = new HashMap<>();
@@ -286,19 +353,22 @@ final class AlbumServiceTest {
                 attributes.put(attribute, new AttributeState(attribute, attribute == Attribute.MAX_HEALTH ? 20
                     : attribute == Attribute.ATTACK_DAMAGE ? 1 : attribute == Attribute.MOVEMENT_SPEED ? .1 : 0));
             inventory = proxy(PlayerInventory.class, (object, method, args) -> switch(method.getName()) {
-                case "getItem" -> storage.getItem((Integer)args[0]);
-                case "setItem" -> { storage.setItem((Integer)args[0], (ItemStack)args[1]); yield null; }
-                case "getContents", "getStorageContents" -> storage.getContents();
+                case "getItem" -> (Integer)args[0]<36?storage.getItem((Integer)args[0]):extra[(Integer)args[0]-36];
+                case "setItem" -> {int slot=(Integer)args[0];if(slot<36)storage.setItem(slot,(ItemStack)args[1]);else extra[slot-36]=(ItemStack)args[1];yield null;}
+                case "getContents" -> {ItemStack[] all=Arrays.copyOf(storage.getContents(),41);System.arraycopy(extra,0,all,36,5);yield all;}
+                case "getStorageContents" -> storage.getContents();
                 case "setContents", "setStorageContents" -> { storage.setContents((ItemStack[])args[0]); yield null; }
                 case "getItemInMainHand" -> storage.getItem(0);
-                case "getItemInOffHand" -> null;
+                case "getItemInOffHand" -> extra[4];
                 case "getType" -> InventoryType.PLAYER;
-                case "getSize" -> 36;
+                case "getSize" -> 41;
                 default -> objectMethod(object, method.getName(), args);
             });
             player = proxy(Player.class, (object, method, args) -> switch(method.getName()) {
                 case "getInventory" -> inventory;
                 case "getOpenInventory" -> getView();
+                case "getItemOnCursor" -> cursor;
+                case "setItemOnCursor" -> {cursor=(ItemStack)args[0];yield null;}
                 case "getUniqueId" -> uuid;
                 case "getName" -> "TarotOfflineAlbumTest";
                 case "getGameMode" -> mode;
